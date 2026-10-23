@@ -1,0 +1,223 @@
+{
+    "class": "horizon::AssetMetadata",
+    "version": 2,
+    "data": {
+        "id": "5384007422478213937",
+        "pipelineVersion": 1,
+        "assetBuilderSettings": [
+            {
+                "class": "horizon::DccTemplateAssetBuilderSettings",
+                "version": 10009,
+                "data": {
+                    "target": "template",
+                    "sceneCollisionLayer": "Layer2",
+                    "collisionShape": "TriangleMesh",
+                    "retainAllTransforms": false,
+                    "usePackageNameInIds": false,
+                    "templateRootName": "PropWall_Spaceport_EntranceArchway2",
+                    "retainAllTransformsFixVersion": 2,
+                    "hiddenSceneItemsFixVersion": 1,
+                    "stableRootUuidFixVersion": 2,
+                    "disableRootNodeStringFixVersion": 1,
+                    "impostor": {
+                        "class": "horizon::DccTemplateImpostorSettings",
+                        "version": 4,
+                        "data": {
+                            "enabled": false,
+                            "projection": "Single",
+                            "distance": 50.0,
+                            "transitionDistance": 5.0,
+                            "cutoutFactor": 0.5,
+                            "atlasGridDim": "3",
+                            "cellResolution": "512",
+                            "overrideSize": false,
+                            "width": 1.0,
+                            "height": 1.0,
+                            "colorAtlas": {
+                                "packageOrRemoteId": "0",
+                                "ingestionId": "0",
+                                "targetId": "0"
+                            },
+                            "normalAtlas": {
+                                "packageOrRemoteId": "0",
+                                "ingestionId": "0",
+                                "targetId": "0"
+                            },
+                            "mroAtlas": {
+                                "packageOrRemoteId": "0",
+                                "ingestionId": "0",
+                                "targetId": "0"
+                            },
+                            "bakedWidth": 0.0,
+                            "bakedHeight": 0.0,
+                            "sourceContentHash": "0",
+                            "bakerVersion": 0,
+                            "canopy": {
+                                "class": "horizon::DccTemplateCanopyProfile",
+                                "version": 1,
+                                "data": {}
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "class": "horizon::dcc_asset_processing::DccSceneAssetBuilderSettings",
+                "version": 10017,
+                "data": {
+                    "target": "",
+                    "sourceCoordinateSystem": "RightUpBackward",
+                    "orientationCoordinateSystem": "YUp-ZBackward-RightHanded",
+                    "useNamedBasedLODs": false,
+                    "upsideDownV": false,
+                    "useGlobalScale": true,
+                    "globalScale": 1.0,
+                    "enableAssetReferencing": true,
+                    "importAssetReferencingVersion": 1,
+                    "enableLegacyMaterialConversion": false,
+                    "materialConversionVersion": 1,
+                    "enableFbxUnitConversionAlways": true,
+                    "importErrorHandlingBehavior": 1,
+                    "materialAssignmentHandlingVersion": 1,
+                    "sceneBakingMethod": "UnbakedScene",
+                    "meshPivotMode": "None",
+                    "disableAlwaysCreateDefaultMaterial": true,
+                    "importWindingOrderHandlingVersion": 1,
+                    "uvTransformHandlingVersion": 1,
+                    "lodVariantHandlingVersion": 0
+                }
+            },
+            {
+                "class": "horizon::renderer::tool::MeshAssetBuilderSettings",
+                "version": 10004,
+                "data": {
+                    "target": "mesh",
+                    "lightmapTextureTarget": "",
+                    "materialMapTarget": "materialMap.json",
+                    "streamable": true,
+                    "streamCount": 2,
+                    "instanceGroupID": 0,
+                    "flipBitangent": false,
+                    "meshSettingsList": [
+                        {
+                            "class": "horizon::renderer::tool::MeshAssetBuilderMeshSettings",
+                            "version": 10005,
+                            "data": {
+                                "nodePath": "/RootNode/mesh_node",
+                                "lightmapTextureTarget": "",
+                                "cpuReadable": false,
+                                "shouldParameterizeLightMapTexture": false,
+                                "cullFinalLod": false,
+                                "lodSelectionMetric": "Screen Space Ratio",
+                                "lodSettings": [
+                                    {
+                                        "class": "horizon::renderer::tool::LodSettings",
+                                        "data": {
+                                            "distanceRatio": 0.20000000298023225,
+                                            "reductionFactor": 1.0,
+                                            "targetError": 0.0,
+                                            "simplifyProfile": "Optimized",
+                                            "simplifyParams": {
+                                                "class": "horizon::renderer::tool::SimplifyParams",
+                                                "data": {
+                                                    "allowCollapseAcrossSharpEdges": false,
+                                                    "allowCollapseSmallBoundaries": false,
+                                                    "allowRemoveSmallGeometry": false,
+                                                    "smallGeometryRemovalThresholdRatio": 0.0,
+                                                    "smallGeometryMinFaceCount": 0,
+                                                    "scaleCostByTriangleArea": false,
+                                                    "weldEdges": false,
+                                                    "repairMesh": false,
+                                                    "boneInfluenceCostScale": 1.0
+                                                }
+                                            }
+                                        }
+                                    }
+                                ],
+                                "vertexStrippingConfig": {
+                                    "class": "horizon::renderer::tool::VertexStrippingConfig",
+                                    "data": {
+                                        "normals": "Automatic",
+                                        "texcoord0": "Automatic",
+                                        "texcoord1": "Automatic",
+                                        "texcoord2": "Automatic",
+                                        "texcoord3": "Automatic",
+                                        "vertexColor0": "Automatic",
+                                        "vertexColor1": "Automatic"
+                                    }
+                                },
+                                "materials": [
+                                    {
+                                        "packageOrRemoteId": "26782873481315084",
+                                        "ingestionId": "9079108868074352615",
+                                        "targetId": "157013062"
+                                    }
+                                ],
+                                "originalMaterials": [
+                                    {
+                                        "class": "horizon::AssetId",
+                                        "data": {
+                                            "packageOrRemoteId": "0",
+                                            "ingestionId": "5384007422478213937",
+                                            "targetId": "1604685701"
+                                        }
+                                    }
+                                ],
+                                "blendShapes": [],
+                                "originallyExportedBlendShapesHash": 4238263450
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "class": "horizon::physics::PhysXConvexMeshAssetBuilderSettings",
+                "version": 10001,
+                "data": {
+                    "target": "phys_convex_mesh",
+                    "maxNumConvexHulls": 1,
+                    "maxNumVertsPerConvexHull": 128,
+                    "voxelResolution": 400000,
+                    "allowedVolumeErrorPercentage": 1.0,
+                    "recursionDepth": 10,
+                    "minEdgeLength": 2
+                }
+            }
+        ],
+        "docMeta": {
+            "class": "horizon::DocMetadata",
+            "data": {}
+        },
+        "provenance": {
+            "class": "horizon::AssetProvenance",
+            "data": {
+                "generator": "marketplace",
+                "source_job_id": "1548614270612277",
+                "saved_at": "1792745986682",
+                "attributes": [
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_author",
+                            "value": "meta"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_name",
+                            "value": "PropWall_Spaceport_EntranceArchway2"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_version",
+                            "value": "0.0.1"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

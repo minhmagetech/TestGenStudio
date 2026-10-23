@@ -6,8 +6,16 @@
     mc:Ignorable="d"
     HorizontalAlignment="Right"
     VerticalAlignment="Top"
-    Margin="0,20,20,0"
+    Margin="0,20,20,0" RenderTransformOrigin="1.0,0.0"
     Orientation="Vertical">
+    <StackPanel.RenderTransform>
+        <TransformGroup>
+            <ScaleTransform ScaleX="3" ScaleY="3"/>
+            <SkewTransform/>
+            <RotateTransform/>
+            <TranslateTransform/>
+        </TransformGroup>
+    </StackPanel.RenderTransform>
 
     <!-- One pill per currency, bound to the ViewModel's Pills list. -->
     <ItemsControl ItemsSource="{Binding Pills}">

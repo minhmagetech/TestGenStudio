@@ -1,0 +1,165 @@
+{
+    "class": "horizon::AssetMetadata",
+    "version": 2,
+    "data": {
+        "id": "14794053599066889751",
+        "pipelineVersion": 1,
+        "assetBuilderSettings": [
+            {
+                "class": "horizon::renderer::tool::TextureAssetBuilderSettings",
+                "version": 10003,
+                "data": {
+                    "target": "tex",
+                    "streamable": true,
+                    "streamCount": 2,
+                    "cpuReadable": false,
+                    "textureSettings": {
+                        "class": "horizon::renderer::tool::TextureAssetBuilderTextureSettings",
+                        "version": 8,
+                        "data": {
+                            "equirectangularToCube": false,
+                            "fixEquirectSeam": "fix-if-needed",
+                            "enableRoughnessConvolution": false,
+                            "premultiplyAlpha": false,
+                            "preserveAlphaCoverage": false,
+                            "alphaCutoff": 0.5,
+                            "renormalizeNormals": false,
+                            "mipFilterType": "Default",
+                            "keepFullResolution": false,
+                            "defaultFormat": "Srgb",
+                            "platformOverrides": [
+                                {
+                                    "class": "horizon::renderer::tool::TextureAssetBuilderPlatformOverride",
+                                    "data": {
+                                        "platform": "pc",
+                                        "settings": {
+                                            "class": "horizon::renderer::tool::TextureAssetBuilderPlatformSettings",
+                                            "data": {
+                                                "textureFormat": "BC7Srgb",
+                                                "generateMips": true,
+                                                "highQualityCompression": false,
+                                                "desiredWidth": 0,
+                                                "desiredHeight": 0
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "class": "horizon::renderer::tool::TextureAssetBuilderPlatformOverride",
+                                    "data": {
+                                        "platform": "android",
+                                        "settings": {
+                                            "class": "horizon::renderer::tool::TextureAssetBuilderPlatformSettings",
+                                            "data": {
+                                                "textureFormat": "ASTC6x6Srgb",
+                                                "generateMips": true,
+                                                "highQualityCompression": false,
+                                                "desiredWidth": 0,
+                                                "desiredHeight": 0
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "class": "horizon::renderer::tool::TextureAssetBuilderPlatformOverride",
+                                    "data": {
+                                        "platform": "linux64",
+                                        "settings": {
+                                            "class": "horizon::renderer::tool::TextureAssetBuilderPlatformSettings",
+                                            "data": {
+                                                "textureFormat": "BC7Srgb",
+                                                "generateMips": true,
+                                                "highQualityCompression": false,
+                                                "desiredWidth": 0,
+                                                "desiredHeight": 0
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "class": "horizon::renderer::tool::TextureAssetBuilderPlatformOverride",
+                                    "data": {
+                                        "platform": "ios",
+                                        "settings": {
+                                            "class": "horizon::renderer::tool::TextureAssetBuilderPlatformSettings",
+                                            "data": {
+                                                "textureFormat": "ASTC6x6Srgb",
+                                                "generateMips": true,
+                                                "highQualityCompression": false,
+                                                "desiredWidth": 0,
+                                                "desiredHeight": 0
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "class": "horizon::renderer::tool::TextureAssetBuilderPlatformOverride",
+                                    "data": {
+                                        "platform": "macos",
+                                        "settings": {
+                                            "class": "horizon::renderer::tool::TextureAssetBuilderPlatformSettings",
+                                            "data": {
+                                                "textureFormat": "BC7Srgb",
+                                                "generateMips": true,
+                                                "highQualityCompression": false,
+                                                "desiredWidth": 0,
+                                                "desiredHeight": 0
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "class": "horizon::renderer::tool::TextureAssetBuilderPlatformOverride",
+                                    "data": {
+                                        "platform": "hzos",
+                                        "settings": {
+                                            "class": "horizon::renderer::tool::TextureAssetBuilderPlatformSettings",
+                                            "data": {
+                                                "textureFormat": "ASTC6x6Srgb",
+                                                "generateMips": true,
+                                                "highQualityCompression": false,
+                                                "desiredWidth": 0,
+                                                "desiredHeight": 0
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ],
+        "provenance": {
+            "class": "horizon::AssetProvenance",
+            "data": {
+                "generator": "marketplace",
+                "source_job_id": "908502328300213",
+                "saved_at": "1792745982822",
+                "attributes": [
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_author",
+                            "value": "meta"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_name",
+                            "value": "portal"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_version",
+                            "value": "0.0.2"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

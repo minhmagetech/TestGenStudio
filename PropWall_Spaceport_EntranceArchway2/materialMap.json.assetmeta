@@ -1,0 +1,43 @@
+{
+    "class": "horizon::AssetMetadata",
+    "version": 2,
+    "data": {
+        "id": "10050530421852359931",
+        "pipelineVersion": 1,
+        "docMeta": {
+            "class": "horizon::DocMetadata",
+            "data": {}
+        },
+        "provenance": {
+            "class": "horizon::AssetProvenance",
+            "data": {
+                "generator": "marketplace",
+                "source_job_id": "1548614270612277",
+                "saved_at": "1792745986171",
+                "attributes": [
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_author",
+                            "value": "meta"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_name",
+                            "value": "PropWall_Spaceport_EntranceArchway2"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_version",
+                            "value": "0.0.1"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

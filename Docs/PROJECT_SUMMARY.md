@@ -174,22 +174,20 @@ Each frame, subsystems are updated in this order:
 
 ## Migration Upsell & Reward System
 
-A two-panel UI system for migrating players to the Horizon app and rewarding returning migrators.
+A two-panel UI system for migrating players to the Horizon app and rewarding returning migrators. All migration logic is consolidated in `scripts/migration/MigrationComponent.ts`, which exports five components.
 
 ### Upsell Panel
-- **Trigger-activated**: An invisible trigger volume in the scene broadcasts a network event when a player enters it.
+- **Trigger-activated**: The `MigrationPortal` trigger volume in the scene broadcasts a `MigrationPortalEnteredEvent` when a player enters it.
 - **Local-player only**: The upsell panel shows only on the entering player's client, and only if the platform is MetaApps.
 - **Continue button**: Calls `migrateToHorizonApp()` with a campaign ID. If migration is unavailable, a "not available" message appears.
 - **Dismiss button**: Closes the panel.
-- **Entities**: `MigrationUpsellPanel` (scene entity with CustomUi + controller), `MigrationUpsellTrigger` (trigger volume placed in scene).
+- **Entities**: `MigrationUpsellPanel` (scene entity with CustomUi + `MigrationUpsellPanelController`), `MigrationPortal` template instance (trigger volume with `MigrationTriggerHandler`).
 
 ### Reward Panel
-- **Player-join activated**: On local player join, checks `fetchMigrationData()`. If an unrewarded migration exists, grants a reward, marks it granted, and shows the popup.
+- **Player-join activated**: On local player join, checks `fetchMigrationData()`. If an unrewarded migration exists, sends a grant request to the server, marks the migration rewarded, and shows the popup.
+- **Server grant**: `MigrationRewardGrantHandler` (on `ServerSystems`) receives the request and calls `SoftCurrencyService.grant()` to award 100 diamonds.
 - **OK button**: Closes the panel.
-- **Entity**: `MigrationRewardPanel` (scene entity with CustomUi + controller).
-
-### Placeholder Stubs
-All MigrationService API calls (`getMobileAppPlatform`, `migrateToHorizonApp`, `fetchMigrationData`, `setMigrationRewardGranted`) are implemented as clearly-marked TODO stubs in `scripts/migration/MigrationEvents.ts`. Replace with real SDK imports when the MigrationService API becomes available.
+- **Entity**: `MigrationRewardPanel` (scene entity with CustomUi + `MigrationRewardPanelController`).
 
 ## Diamond Currency System
 
@@ -236,4 +234,4 @@ void SoftCurrencyService.get().grant(playerEntity, 'diamonds', amount, 'reason_t
 
 Primitive templates available in `Templates/Primitives/`:
 - Cone, Cube, Cylinder, Disc, Plane, Prism, Pyramid, Sphere, Torus, Wedge
-- `Templates/GameplayObjects/MigrationUpsellTrigger.hstf` - Invisible trigger volume for the migration upsell system
+- `Templates/GameplayObjects/MigrationPortal.hstf` - Trigger volume for the migration upsell system (MigrationTriggerHandler script, Trigger physics body)

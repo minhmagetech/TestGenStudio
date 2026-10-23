@@ -2,7 +2,7 @@ tasks: []
 
 done:
   - Create Gameplan -- 4 modules, 17 images, all schemas built
-  - MigrationService upsell and reward system -- Two ScreenSpace panels with trigger volume wiring
+  - MigrationService upsell and reward system -- Portal trigger, upsell panel, reward popup, 100 diamond grant
   - Diamond currency system -- Soft currency wallet, collectible pickups, HUD display, reward API
 
 chopping_block:

@@ -192,7 +192,7 @@
                 {
                     "data": {
                         "class": "horizon::platform_api::MeshPlatformComponent",
-                        "version": 11,
+                        "version": 12,
                         "data": {
                             "mesh": {
                                 "packageOrRemoteId": "26782873481315084",
@@ -228,7 +228,7 @@
                 {
                     "data": {
                         "class": "horizon::platform_api::AnimatorPlatformComponent",
-                        "version": 10,
+                        "version": 14,
                         "data": {
                             "animGraph": {
                                 "packageOrRemoteId": "26782873481315084",
@@ -580,6 +580,18 @@
                         }
                     },
                     "dataType": "horizon::DataDefinitionAsset"
+                },
+                {
+                    "data": {
+                        "class": "MigrationUpsellDetection",
+                        "definitionAsset": {
+                            "packageOrRemoteId": "26782873481315084",
+                            "ingestionId": "3320941746913263471",
+                            "targetId": "4237980480"
+                        },
+                        "data": {}
+                    },
+                    "dataType": "horizon::DataDefinitionAsset"
                 }
             ],
             "attributes": [
@@ -612,7 +624,7 @@
                 {
                     "data": {
                         "class": "horizon::platform_api::ColliderCapsulePlatformComponent",
-                        "version": 4,
+                        "version": 5,
                         "data": {
                             "collisionLayer": "Layer1",
                             "axis": "Y",

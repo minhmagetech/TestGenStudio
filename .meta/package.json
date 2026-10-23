@@ -5,15 +5,15 @@
     "dependencies": [
         {
             "name": "meta/assistant",
-            "version": "development"
+            "version": "0.6.1"
         },
         {
             "name": "meta/assistant_experimental",
-            "version": "development"
+            "version": "0.6.2"
         },
         {
             "name": "meta/assistant_provisional",
-            "version": "development"
+            "version": "0.6.0"
         },
         {
             "name": "meta/editor_starter_kit",
@@ -25,7 +25,15 @@
         },
         {
             "name": "meta/worlds_sdk",
-            "version": "development"
+            "version": "0.8.24"
+        },
+        {
+            "name": "meta/editor_kit_shaders",
+            "version": "0.12.7"
+        },
+        {
+            "name": "meta/shaderkit",
+            "version": "0.11.11"
         }
     ]
 }

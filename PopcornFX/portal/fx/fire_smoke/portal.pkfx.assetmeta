@@ -1,0 +1,39 @@
+{
+    "class": "horizon::AssetMetadata",
+    "version": 2,
+    "data": {
+        "id": "3360142440246586847",
+        "pipelineVersion": 1,
+        "provenance": {
+            "class": "horizon::AssetProvenance",
+            "data": {
+                "generator": "marketplace",
+                "source_job_id": "908502328300213",
+                "saved_at": "1792745982807",
+                "attributes": [
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_author",
+                            "value": "meta"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_name",
+                            "value": "portal"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_version",
+                            "value": "0.0.2"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

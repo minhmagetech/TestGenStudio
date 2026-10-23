@@ -96,6 +96,12 @@
       "name": "Loco_Walk_Base_R",
       "version": "0.0.1"
     },
+    "meta/PropWall_Spaceport_EntranceArchway2/0.0.1": {
+      "author": "meta",
+      "folderName": "PropWall_Spaceport_EntranceArchway2",
+      "name": "PropWall_Spaceport_EntranceArchway2",
+      "version": "0.0.1"
+    },
     "meta/Sprint_Forward/0.0.1": {
       "author": "meta",
       "folderName": "Sprint_Forward",
@@ -190,6 +196,12 @@
       "author": "meta",
       "folderName": "popcornfx/poison_aura_mist_loop",
       "name": "poison_aura_mist_loop",
+      "version": "0.0.2"
+    },
+    "meta/portal/0.0.2": {
+      "author": "meta",
+      "folderName": "popcornfx/portal",
+      "name": "portal",
       "version": "0.0.2"
     },
     "meta/rocket_exhaust_trail/0.0.2": {

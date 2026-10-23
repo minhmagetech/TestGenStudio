@@ -1,0 +1,72 @@
+{
+    "class": "horizon::AssetMetadata",
+    "version": 2,
+    "data": {
+        "id": "17537163554707953919",
+        "pipelineVersion": 1,
+        "assetBuilderSettings": [
+            {
+                "class": "horizon::renderer::tool::TextureAssetBuilderSettings",
+                "version": 10003,
+                "data": {
+                    "target": "tex",
+                    "streamable": true,
+                    "streamCount": 2,
+                    "cpuReadable": false,
+                    "textureSettings": {
+                        "class": "horizon::renderer::tool::TextureAssetBuilderTextureSettings",
+                        "version": 8,
+                        "data": {
+                            "equirectangularToCube": false,
+                            "fixEquirectSeam": "fix-if-needed",
+                            "enableRoughnessConvolution": false,
+                            "premultiplyAlpha": false,
+                            "preserveAlphaCoverage": false,
+                            "alphaCutoff": 0.5,
+                            "renormalizeNormals": false,
+                            "mipFilterType": "Default",
+                            "keepFullResolution": false,
+                            "defaultFormat": "Srgb",
+                            "platformOverrides": []
+                        }
+                    }
+                }
+            }
+        ],
+        "docMeta": {
+            "class": "horizon::DocMetadata",
+            "data": {}
+        },
+        "provenance": {
+            "class": "horizon::AssetProvenance",
+            "data": {
+                "generator": "marketplace",
+                "source_job_id": "1548614270612277",
+                "saved_at": "1792745986174",
+                "attributes": [
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_author",
+                            "value": "meta"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_name",
+                            "value": "PropWall_Spaceport_EntranceArchway2"
+                        }
+                    },
+                    {
+                        "class": "horizon::AssetProvenanceAttribute",
+                        "data": {
+                            "key": "package_version",
+                            "value": "0.0.1"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

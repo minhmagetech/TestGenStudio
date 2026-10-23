@@ -1,0 +1,145 @@
+Version = 2.21.5.24009;
+CProjectSettings	$D857A09F
+{
+	General = "$35A36C4E";
+	Scene = "$4B933A29";
+	LOD = "$9154DFA0";
+	Constants = "$EAC726E3";
+	Features = "$4ADE8DE2";
+	Assets = "$D279714D";
+	Budgets = "$5F621394";
+	Baking = "$41E5AFE7";
+	Editor = "$BEDF8936";
+	Rendering = "$2909A531";
+	Documentation = "$D6EEA348";
+}
+CProjectSettingsGeneral	$35A36C4E
+{
+	ProjectName = "portal";
+	ProjectDescription = "Project containing PopcornFX based VFX library Dec182025.";
+	ProjectThumbnail = "Editor/Thumbnails/HqrrEcrI_400x400.png";
+	CompanyName = "Meta, inc.";
+	Homepage = "www.meta.com";
+	RootDir = "";
+	PresetsDir = "Editor/Presets";
+	AnimationTracksDir = "Editor/AnimationTracks";
+	ThumbnailsDir = "Editor/Thumbnails";
+	LibraryDir = "Library";
+	RuntimeConfigsDir = "Config";
+	DocumentationDir = "Documentation";
+	EditorCacheDir = "Editor/Cache";
+}
+CProjectSettingsScene	$4B933A29
+{
+	CoordinateFrame = Right_Handed_Y_Up;
+	CoordinateFrameAxisX = Right;
+	CoordinateFrameAxisY = Up;
+	CoordinateFrameAxisZ = Backward;
+	DistanceUnits = Meter;
+	MaxDistanceBeforeTeleport = inf;
+}
+CProjectSettingsLOD	$9154DFA0
+{
+}
+CProjectSettingsConstants	$EAC726E3
+{
+}
+CProjectSettingsFeatures	$4ADE8DE2
+{
+	EnableDefaultMaterials = false;
+	EnableLegacyMaterials = true;
+}
+CProjectSettingsAssets	$D279714D
+{
+	EffectExtensions = {
+		"pkfx",
+	};
+	MeshExtensions = {
+		"fbx",
+		"gr2",
+		"usd",
+		"usdc",
+		"usda",
+		"usdz",
+	};
+	ImageExtensions = {
+		"dds",
+		"png",
+		"jpg",
+		"jpeg",
+		"tga",
+		"tif",
+		"tiff",
+		"pkm",
+		"pvr",
+		"exr",
+		"hdr",
+		"pkim",
+	};
+	ImageAtlasExtensions = {
+		"pkat",
+	};
+	VectorFieldExtensions = {
+		"fga",
+		"pkvf",
+	};
+	SoundExtensions = {
+		"wav",
+		"ogg",
+		"mp3",
+	};
+	SimCacheExtensions = {
+		"pksc",
+	};
+	FontExtensions = {
+		"ttf",
+		"otf",
+		"pkfm",
+	};
+	MaterialExtensions = {
+		"pkma",
+	};
+	VertexShaderExtensions = {
+		"vert",
+	};
+	FragmentShaderExtensions = {
+		"frag",
+	};
+	ShaderIncludeExtensions = {
+		"h",
+		"inl",
+	};
+	RendererInterfaceExtensions = {
+		"pkri",
+	};
+	VideoExtensions = {
+		"mp4",
+		"avi",
+		"ogv",
+		"wmv",
+	};
+}
+CProjectSettingsBudgets	$5F621394
+{
+}
+CProjectSettingsBaking	$41E5AFE7
+{
+}
+CProjectSettingsEditor	$BEDF8936
+{
+	DefaultRestitution = 1.0000000e+00;
+	DefaultRestitutionCombineMode = Multiply;
+	DefaultFriction = 5.0000000e-01;
+	DefaultFrictionCombineMode = Average;
+	WindScale = 1.0000000e+00;
+}
+CProjectSettingsRendering	$2909A531
+{
+	EnableBloom = false;
+}
+CProjectSettingsDocumentation	$D6EEA348
+{
+}
+CEditorProject	$5F44DFAB
+{
+}
