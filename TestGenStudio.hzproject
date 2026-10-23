@@ -8,6 +8,7 @@
     "organizationId": "771759592689109",
     "organizationName": "huuminhmagetech's team",
     "organizationScope": "huuminhmagetechsteam",
+    "worldId": "1367206746477721",
     "collisionLayers": [
         "",
         "",
@@ -43,11 +44,17 @@
         ""
     ],
     "playerSettings": {
+        "__attr__": {
+            "__version__": {
+                "version": 2
+            }
+        },
         "avatarMax": 1,
         "screenOrientation": "Portrait"
     },
-    "editorVersion": "187.0.0.34.652",
+    "editorVersion": "194.0.0.11.619",
     "starterWorldType": "BP_BLANK_2D_GAME",
+    "remotePackageId": "29411422908463601",
     "remixSource": "meta/Base_AI_Template#0.0.59",
     "sourceWorldId": "26006345709052063"
 }

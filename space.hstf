@@ -188,7 +188,7 @@
                 {
                     "data": {
                         "class": "horizon::platform_api::MeshPlatformComponent",
-                        "version": 11,
+                        "version": 12,
                         "data": {
                             "mesh": {
                                 "packageOrRemoteId": "24407058055595655",
@@ -208,7 +208,7 @@
                 {
                     "data": {
                         "class": "horizon::platform_api::ColliderBoxPlatformComponent",
-                        "version": 3,
+                        "version": 4,
                         "data": {
                             "collisionLayer": "Layer2",
                             "halfExtents": {
@@ -343,6 +343,115 @@
                 }
             ],
             "attributes": []
+        },
+        {
+            "id": "29f151cb-8617-414a-8b91-9e4b5a71750a",
+            "name": "MigrationComponent",
+            "components": [
+                {
+                    "data": {
+                        "class": "horizon::platform_api::TransformPlatformComponent",
+                        "version": 3,
+                        "data": {
+                            "localPosition": {
+                                "x": -50.7684211730957,
+                                "y": 0.000007850299880374223,
+                                "z": 58.61614227294922
+                            }
+                        }
+                    },
+                    "dataType": "horizon::DataDefinitionAsset"
+                },
+                {
+                    "data": {
+                        "class": "MigrationComponent",
+                        "definitionAsset": {
+                            "packageOrRemoteId": "26782873481315084",
+                            "ingestionId": "3320941746913263471",
+                            "targetId": "4237980480"
+                        },
+                        "data": {}
+                    },
+                    "dataType": "horizon::DataDefinitionAsset"
+                }
+            ],
+            "attributes": []
+        },
+        {
+            "id": "79838446-2250-4ca6-999e-cab5d4b3c480",
+            "name": "DiamondHUD",
+            "components": [
+                {
+                    "data": {
+                        "class": "horizon::platform_api::TransformPlatformComponent",
+                        "version": 3,
+                        "data": {}
+                    },
+                    "dataType": "horizon::DataDefinitionAsset"
+                },
+                {
+                    "data": {
+                        "class": "SoftCurrencyHUDComponent",
+                        "definitionAsset": {
+                            "packageOrRemoteId": "26782873481315084",
+                            "ingestionId": "350753903837020516",
+                            "targetId": "4237980480"
+                        },
+                        "data": {}
+                    },
+                    "dataType": "horizon::DataDefinitionAsset"
+                },
+                {
+                    "data": {
+                        "class": "horizon::platform_api::CustomUiPlatformComponent",
+                        "version": 16,
+                        "data": {
+                            "customUiType": "ScreenSpace",
+                            "xaml": {
+                                "packageOrRemoteId": "26782873481315084",
+                                "ingestionId": "18188817547850417283",
+                                "targetId": "2149638574"
+                            },
+                            "isInteractable": true
+                        }
+                    },
+                    "dataType": "horizon::DataDefinitionAsset"
+                }
+            ],
+            "attributes": []
+        },
+        {
+            "id": "11245a62-d45a-4ac0-aa34-4b2ce09d7d13",
+            "name": "ServerSystems",
+            "components": [
+                {
+                    "data": {
+                        "class": "horizon::platform_api::TransformPlatformComponent",
+                        "version": 3,
+                        "data": {}
+                    },
+                    "dataType": "horizon::DataDefinitionAsset"
+                },
+                {
+                    "data": {
+                        "class": "DiamondSpawnerComponent",
+                        "definitionAsset": {
+                            "packageOrRemoteId": "26782873481315084",
+                            "ingestionId": "18005322080118279076",
+                            "targetId": "4237980480"
+                        },
+                        "data": {
+                            "diamondTemplate": {
+                                "packageOrRemoteId": "26782873481315084",
+                                "ingestionId": "12056280984169939390",
+                                "targetId": "2719744159"
+                            }
+                        }
+                    },
+                    "dataType": "horizon::DataDefinitionAsset"
+                }
+            ],
+            "attributes": []
         }
     ],
     "relationships": [
@@ -369,6 +478,21 @@
         {
             "relationshipType": "RelationChildOf",
             "source": "8929ab86-701c-484b-918f-15b2bf049f2f",
+            "destination": "8641bbb7-840f-42ae-819b-987022fd2b7f"
+        },
+        {
+            "relationshipType": "RelationChildOf",
+            "source": "29f151cb-8617-414a-8b91-9e4b5a71750a",
+            "destination": "8641bbb7-840f-42ae-819b-987022fd2b7f"
+        },
+        {
+            "relationshipType": "RelationChildOf",
+            "source": "79838446-2250-4ca6-999e-cab5d4b3c480",
+            "destination": "8641bbb7-840f-42ae-819b-987022fd2b7f"
+        },
+        {
+            "relationshipType": "RelationChildOf",
+            "source": "11245a62-d45a-4ac0-aa34-4b2ce09d7d13",
             "destination": "8641bbb7-840f-42ae-819b-987022fd2b7f"
         }
     ]

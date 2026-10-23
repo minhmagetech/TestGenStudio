@@ -172,7 +172,68 @@ Each frame, subsystems are updated in this order:
 - `scripts/utils/GraceTimer.ts` - Coyote time grace period
 - `scripts/utils/Cooldown.ts` - Cooldown timer
 
+## Migration Upsell & Reward System
+
+A two-panel UI system for migrating players to the Horizon app and rewarding returning migrators.
+
+### Upsell Panel
+- **Trigger-activated**: An invisible trigger volume in the scene broadcasts a network event when a player enters it.
+- **Local-player only**: The upsell panel shows only on the entering player's client, and only if the platform is MetaApps.
+- **Continue button**: Calls `migrateToHorizonApp()` with a campaign ID. If migration is unavailable, a "not available" message appears.
+- **Dismiss button**: Closes the panel.
+- **Entities**: `MigrationUpsellPanel` (scene entity with CustomUi + controller), `MigrationUpsellTrigger` (trigger volume placed in scene).
+
+### Reward Panel
+- **Player-join activated**: On local player join, checks `fetchMigrationData()`. If an unrewarded migration exists, grants a reward, marks it granted, and shows the popup.
+- **OK button**: Closes the panel.
+- **Entity**: `MigrationRewardPanel` (scene entity with CustomUi + controller).
+
+### Placeholder Stubs
+All MigrationService API calls (`getMobileAppPlatform`, `migrateToHorizonApp`, `fetchMigrationData`, `setMigrationRewardGranted`) are implemented as clearly-marked TODO stubs in `scripts/migration/MigrationEvents.ts`. Replace with real SDK imports when the MigrationService API becomes available.
+
+## Diamond Currency System
+
+A server-authoritative diamond currency with persistent per-player balances, collectible world pickups, and a real-time HUD.
+
+### How It Works
+
+- **Player Variable**: `diamonds` (NUMBER) — persisted per-player balance.
+- **SoftCurrencyService** (`@service()`, auto-instantiated server-side): manages all grant/spend operations with locking, integer guards, overflow/underflow protection, and audit logging. The ONLY way diamonds change is through `grant()` (server-side) and `trySpend()` (server-validated).
+- **DiamondCollectible** (template `Templates/DiamondCollectible.hstf`): walk-over collectible that grants 1 diamond on pickup via `SoftCurrencyService.grant()`. Uses client-predictive collection with server verdict for responsive gameplay.
+- **DiamondSpawnerComponent** (on `ServerSystems` entity): spawns 5 diamond collectibles at predefined positions around the spawn area on game start (server-side only).
+- **SoftCurrencyHUD** (on `DiamondHUD` entity, ScreenSpace UI): displays the local player's diamond balance in real time, updated via NetworkEvent broadcasts. Includes a demo "Spend 5" button.
+
+### Scene Entities
+
+- **DiamondHUD** — ScreenSpace CustomUI entity with `SoftCurrencyHUDComponent` and `UI/SoftCurrencyHUD.xaml`.
+- **ServerSystems** — Server-owned entity with `DiamondSpawnerComponent` (template ref → `Templates/DiamondCollectible.hstf`).
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `scripts/SoftCurrencyEvents.ts` | Shared NetworkEvents and `@serializable()` payloads for the wallet |
+| `scripts/SoftCurrencyService.ts` | Server-only wallet service: registry, grant/trySpend, persistence, balance broadcasts |
+| `scripts/SoftCurrencyHUDComponent.ts` | Client HUD controller: balance pills for the local player |
+| `UI/SoftCurrencyHUD.xaml` | HUD layout (balance pills + demo spend button) |
+| `scripts/CollectibleEvents.ts` | Shared collectible pickup events |
+| `scripts/Collectible.ts` | Base collectible component with trigger detection and prediction |
+| `scripts/CollectibleSpawner.ts` | Generic collectible spawner utility |
+| `scripts/DiamondCollectible.ts` | Diamond-specific collectible that grants diamonds via SoftCurrencyService |
+| `scripts/DiamondSpawnerComponent.ts` | Spawns diamond collectibles at fixed positions on game start |
+| `Templates/DiamondCollectible.hstf` | Diamond collectible template (sphere mesh, trigger physics, DiamondCollectible script) |
+
+### Programmatic Diamond Granting
+
+Other scripts can grant diamonds server-side:
+```typescript
+import {SoftCurrencyService} from './SoftCurrencyService';
+// In a server-context handler:
+void SoftCurrencyService.get().grant(playerEntity, 'diamonds', amount, 'reason_tag');
+```
+
 ## Additional Templates
 
 Primitive templates available in `Templates/Primitives/`:
 - Cone, Cube, Cylinder, Disc, Plane, Prism, Pyramid, Sphere, Torus, Wedge
+- `Templates/GameplayObjects/MigrationUpsellTrigger.hstf` - Invisible trigger volume for the migration upsell system
