@@ -1,0 +1,4 @@
+// This file can be modified to customize the tsconfig.json for this package, edits will not be overwritten by Meta Horizon Studio
+// Fields present in the generated tsconfig.json such as compilerOptions.paths will override any values in this file
+// Note that this tsconfig only affects edit time checking, transpilation uses a different configuration that is not customizable
+{}

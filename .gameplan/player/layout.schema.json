@@ -1,0 +1,1 @@
+{"template":"browse_focused","layoutVersion":"1","elements":{"browse":{"schema":"./browse.schema.json"},"preview":{"schema":"./preview.schema.json"},"properties":{"schema":"./category.schema.json"}}}

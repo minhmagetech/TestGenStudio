@@ -1,0 +1,345 @@
+// @generated - Actor Framework Scripts v18
+/**
+ * (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+ */
+
+import {
+  component,
+  Component,
+  OnEntityStartEvent,
+  OnEntityDestroyEvent,
+  subscribe,
+  property,
+  WorldService,
+  NetworkMode,
+  TransformComponent,
+  VfxComponent,
+  ExecuteOn,
+  Vec3,
+} from 'meta/worlds';
+import type {Entity, Maybe, TemplateAsset} from 'meta/worlds';
+import {NetworkingService} from 'meta/worlds';
+import {ActorHealthComponent as HealthComponent} from './ActorHealthComponent';
+import {OnActorHealthDamagedLocalEvent} from './ActorHealthEvents';
+import type {ActorHealthDamagedEventPayload} from './ActorHealthEvents';
+
+const VFX_CLEANUP_DELAY_MS = 5000;
+
+/**
+ * Actor Framework hit/death VFX. Initializes scene-owned hitVfxTemplate /
+ * deathVfxTemplate entities and renders ActorHealthComponent's client-local
+ * damage event without blocking actor startup.
+ *
+ * ActorHealthComponent already bridges its damage event exactly once to each
+ * player context. DamageResult.wasFatal selects one effect, so a killing blow
+ * plays the death effect instead of both hit and death effects.
+ *
+ * Configure hitVfxTemplate, deathVfxTemplate in the editor. Optionally set
+ * healthComponentEntity to reference another entity's ActorHealthComponent.
+ *
+ * Distinct @component from the standalone `adding-hit-vfx` VfxOnHit: this one is
+ * wired to ActorHealthComponent (Actor Framework), so the two never collide.
+ */
+@component()
+export class ActorVfxOnHit extends Component {
+  @property()
+  hitVfxTemplate: Maybe<TemplateAsset> = null;
+
+  @property()
+  deathVfxTemplate: Maybe<TemplateAsset> = null;
+
+  /**
+   * Optional entity to get ActorHealthComponent from.
+   * If null, uses the entity this component is attached to.
+   */
+  @property()
+  healthComponentEntity: Maybe<Entity> = null;
+
+  private hitVfxEntity: Entity | null = null;
+  private deathVfxEntity: Entity | null = null;
+  private vfxReady: boolean = false;
+  private pendingWasFatal: boolean | null = null;
+  private initializationPending: boolean = false;
+  private isDestroyed: boolean = false;
+  private lastEffectPosition: Vec3 = Vec3.zero;
+
+  @subscribe(OnEntityStartEvent, {execution: ExecuteOn.Everywhere})
+  onStart(): void {
+    if (!NetworkingService.get().isPlayerContext()) {
+      return;
+    }
+
+    const targetEntity = this.getTargetEntity();
+    const healthComponent = targetEntity.getComponent(HealthComponent);
+    if (!healthComponent) {
+      console.warn(
+        '[ActorVfxOnHit] No ActorHealthComponent on target entity; hit/death VFX disabled.',
+      );
+      return;
+    }
+    if (!this.hitVfxTemplate || !this.deathVfxTemplate) {
+      console.warn(
+        '[ActorVfxOnHit] Both hitVfxTemplate and deathVfxTemplate must be configured; hit/death VFX disabled.',
+      );
+      return;
+    }
+
+    this.lastEffectPosition = this.getEffectPosition();
+    this.initializationPending = true;
+    void this.initializeVfx();
+  }
+
+  private async initializeVfx(): Promise<void> {
+    try {
+      await this.spawnVfxEntities();
+      if (this.isDestroyed) {
+        this.finishDestroyedInitialization();
+        return;
+      }
+      if (!this.hitVfxEntity || !this.deathVfxEntity) {
+        this.pendingWasFatal = null;
+        console.error(
+          '[ActorVfxOnHit] Failed to initialize both VFX entities; hit/death VFX disabled.',
+        );
+        this.scheduleAllVfxCleanup();
+        return;
+      }
+      this.vfxReady = true;
+
+      if (this.pendingWasFatal !== null) {
+        const wasFatal = this.pendingWasFatal;
+        this.pendingWasFatal = null;
+        this.playDamageVfx(wasFatal);
+      }
+    } catch (error) {
+      this.pendingWasFatal = null;
+      if (!this.isDestroyed) {
+        console.error(
+          `[ActorVfxOnHit] Failed to initialize VFX: ${String(error)}`,
+        );
+      }
+      this.scheduleAllVfxCleanup();
+    } finally {
+      this.initializationPending = false;
+    }
+  }
+
+  @subscribe(OnEntityDestroyEvent, {execution: ExecuteOn.Everywhere})
+  onDestroy(): void {
+    if (NetworkingService.get().isPlayerContext()) {
+      this.lastEffectPosition = this.getEffectPosition();
+    }
+    this.isDestroyed = true;
+    this.vfxReady = false;
+
+    if (this.initializationPending) {
+      const hitVfxEntity = this.hitVfxEntity;
+      this.hitVfxEntity = null;
+      this.scheduleCleanup([hitVfxEntity]);
+      return;
+    }
+
+    this.pendingWasFatal = null;
+    this.scheduleInitializedVfxCleanup();
+  }
+
+  @subscribe(OnActorHealthDamagedLocalEvent, {execution: ExecuteOn.Everywhere})
+  onActorHealthDamaged(payload: ActorHealthDamagedEventPayload): void {
+    if (!NetworkingService.get().isPlayerContext()) {
+      return;
+    }
+
+    const damageResult = payload.damageResult;
+    const targetEntity = this.getTargetEntity();
+    if (
+      payload.targetEntity !== targetEntity ||
+      !damageResult ||
+      damageResult.wasBlocked ||
+      damageResult.actualDamage <= 0
+    ) {
+      return;
+    }
+
+    if (this.isDestroyed) {
+      if (!damageResult.wasFatal) {
+        return;
+      }
+      if (this.initializationPending) {
+        this.pendingWasFatal = true;
+        return;
+      }
+
+      const deathVfxEntity = this.deathVfxEntity;
+      this.deathVfxEntity = null;
+      if (deathVfxEntity && !deathVfxEntity.isDestroyed()) {
+        this.playVfxEntityAt(deathVfxEntity, this.lastEffectPosition);
+      }
+      return;
+    }
+
+    this.lastEffectPosition = this.getEffectPosition();
+
+    if (!this.vfxReady) {
+      // Collapse pre-init hits to one replay, preserving fatal priority, rather
+      // than emitting a burst of stale effects after initialization finishes.
+      this.pendingWasFatal =
+        this.pendingWasFatal === true || damageResult.wasFatal;
+      return;
+    }
+
+    this.playDamageVfx(damageResult.wasFatal);
+  }
+
+  private async spawnVfxEntities(): Promise<void> {
+    if (this.hitVfxTemplate) {
+      this.hitVfxEntity = await this.spawnVfx(this.hitVfxTemplate);
+    }
+    if (this.deathVfxTemplate) {
+      this.deathVfxEntity = await this.spawnVfx(
+        this.deathVfxTemplate,
+        true,
+      );
+    }
+  }
+
+  private async spawnVfx(
+    vfxTemplate: TemplateAsset,
+    retainAfterDestroy: boolean = false,
+  ): Promise<Entity | null> {
+    const vfxEntity = await WorldService.get().spawnTemplate({
+      templateAsset: vfxTemplate,
+      position: this.isDestroyed
+        ? this.lastEffectPosition
+        : this.rememberEffectPosition(),
+      networkMode: NetworkMode.LocalOnly,
+    });
+
+    if (vfxEntity == null) {
+      console.error('[ActorVfxOnHit] Unable to spawn the VFX entity.');
+      return null;
+    }
+
+    if (this.isDestroyed && !retainAfterDestroy) {
+      if (!vfxEntity.isDestroyed()) {
+        vfxEntity.destroy();
+      }
+      return null;
+    }
+
+    const vfxComp = vfxEntity.getComponent(VfxComponent);
+    if (!vfxComp) {
+      console.error(
+        `[ActorVfxOnHit] Unable to get VFX component for ${vfxEntity.name}`,
+      );
+      if (!vfxEntity.isDestroyed()) {
+        vfxEntity.destroy();
+      }
+      return null;
+    }
+
+    vfxComp.autoPlay = false;
+    vfxComp.preserveTransformOnPlay = true;
+    // create_vfx_template defaults autoPlay on. VfxComponent.destroy() is the
+    // platform API's stop-and-reset operation: it clears existing particles
+    // but remains replayable through play().
+    vfxComp.destroy();
+
+    return vfxEntity;
+  }
+
+  private playDamageVfx(wasFatal: boolean): void {
+    if (wasFatal) {
+      this.playDeathVfx();
+    } else {
+      this.playHitVfx();
+    }
+  }
+
+  private playHitVfx(): void {
+    if (this.hitVfxEntity) {
+      this.playVfxEntity(this.hitVfxEntity);
+    }
+  }
+
+  private playDeathVfx(): void {
+    if (this.deathVfxEntity) {
+      this.playVfxEntity(this.deathVfxEntity);
+    }
+  }
+
+  private playVfxEntity(vfxEntity: Entity): void {
+    this.playVfxEntityAt(vfxEntity, this.rememberEffectPosition());
+  }
+
+  private playVfxEntityAt(vfxEntity: Entity, position: Vec3): void {
+    const vfxTransform = vfxEntity.getComponent(TransformComponent);
+    if (vfxTransform) {
+      vfxTransform.worldPosition = position;
+    }
+
+    const vfxComp = vfxEntity.getComponent(VfxComponent);
+    if (vfxComp) {
+      vfxComp.play();
+    }
+  }
+
+  private finishDestroyedInitialization(): void {
+    const shouldPlayDeath = this.pendingWasFatal === true;
+    this.pendingWasFatal = null;
+
+    if (shouldPlayDeath && this.deathVfxEntity) {
+      this.playVfxEntityAt(this.deathVfxEntity, this.lastEffectPosition);
+    }
+    this.scheduleAllVfxCleanup();
+  }
+
+  private scheduleAllVfxCleanup(): void {
+    const vfxEntities = [this.hitVfxEntity, this.deathVfxEntity];
+    this.hitVfxEntity = null;
+    this.deathVfxEntity = null;
+    this.scheduleCleanup(vfxEntities);
+  }
+
+  private scheduleInitializedVfxCleanup(): void {
+    const hitVfxEntity = this.hitVfxEntity;
+    const deathVfxEntity = this.deathVfxEntity;
+    this.hitVfxEntity = null;
+    this.scheduleCleanup([hitVfxEntity, deathVfxEntity], () => {
+      if (this.deathVfxEntity === deathVfxEntity) {
+        this.deathVfxEntity = null;
+      }
+    });
+  }
+
+  private scheduleCleanup(
+    vfxEntities: Array<Entity | null>,
+    afterCleanup?: () => void,
+  ): void {
+    // Scene-owned death particles may outlive the actor briefly, but their
+    // helper entities still need deterministic teardown.
+    setTimeout(() => {
+      for (const vfxEntity of vfxEntities) {
+        if (vfxEntity && !vfxEntity.isDestroyed()) {
+          vfxEntity.destroy();
+        }
+      }
+      afterCleanup?.();
+    }, VFX_CLEANUP_DELAY_MS);
+  }
+
+  private getTargetEntity(): Entity {
+    return this.healthComponentEntity ?? this.entity;
+  }
+
+  private getEffectPosition(): Vec3 {
+    return (
+      this.getTargetEntity().getComponent(TransformComponent)?.worldPosition ??
+      Vec3.zero
+    );
+  }
+
+  private rememberEffectPosition(): Vec3 {
+    this.lastEffectPosition = this.getEffectPosition();
+    return this.lastEffectPosition;
+  }
+}

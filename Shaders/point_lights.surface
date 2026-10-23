@@ -1,0 +1,74 @@
+
+BEGIN_CONSTANTBUFFER(pointLightParams, instance) // name of buffer, material/push/instance(/true/false for compat)
+  vec4 pointLightIndices = vec3(0.0, 0.0, 0.0, 0.0);
+END_CONSTANTBUFFER
+
+BEGIN_STORAGEBUFFER(pointLightData, true)
+  vec3 position;
+  vec4 color;
+  float intensity;
+  float radius;
+END_STORAGEBUFFER
+
+BEGIN_SHARED
+  #define GetLight(ind) pointLightData.elements[int(pointLightParams.pointLightIndices[ind])]
+
+  // Calculate point light attenuation with smooth falloff
+  float calculatePointLightAttenuationQuadratic(vec3 worldPos, vec3 lightPos, float radius) {
+    float distance = length(lightPos - worldPos);
+    float attenuation = saturate(1.0 - (distance / radius));
+    return attenuation * attenuation; // Quadratic falloff for smoother results
+  }
+
+  // Calculate diffuse lighting contribution (Lambertian)
+  vec3 calculateDiffuse(vec3 lightColor, float intensity, float NdotL) {
+    return lightColor * max(NdotL, 0.0) * intensity;
+  }
+
+  // Calculate specular lighting contribution (Blinn-Phong approximation)
+  vec3 calculateSpecular(vec3 normal, vec3 lightDir, vec3 viewDir, vec3 lightColor, float intensity, float roughness, float NdotL) {
+    vec3 halfDir = normalize(lightDir + viewDir);
+    float NdotH = max(dot(normal, halfDir), 0.0);
+    float shininess = max(2.0 / (roughness * roughness + 0.0001) - 2.0, 1.0);
+    float spec = pow(NdotH, shininess);
+    return lightColor * spec * intensity * max(NdotL, 0.0);
+  }
+
+  void GetPointLightContribution(int ind, vec3 worldPos, vec3 worldNormal, vec3 viewDir, float roughness, inout vec3 totalDiffuse, inout vec3 totalSpecular, float enableDoubleSidedLighting) {
+    vec3 pointLightDir = normalize(GetLight(ind).position.xyz - worldPos);
+    float pointLightAtten = calculatePointLightAttenuationQuadratic(worldPos, GetLight(ind).position.xyz, GetLight(ind).radius);
+    float NdotL = dot(worldNormal, pointLightDir);
+    vec3 normal = worldNormal * ((NdotL * enableDoubleSidedLighting) < 0.0 ? -1.0 : 1.0);
+    float NdotLDoubleSided = dot(normal, pointLightDir) * (enableDoubleSidedLighting > 0.0 ? 0.50 : 1.0) + (enableDoubleSidedLighting > 0.0 ? 0.50 : 0.0);
+    totalDiffuse += calculateDiffuse(GetLight(ind).color.rgb, GetLight(ind).intensity * pointLightAtten, NdotLDoubleSided);
+    totalSpecular += calculateSpecular(normal, pointLightDir, viewDir, GetLight(ind).color.rgb, GetLight(ind).intensity * pointLightAtten, roughness, NdotL);
+  }
+
+  vec3 GetPointLightsContribution(inout SurfaceData d, float roughness, float metallic, vec3 albedo, float enableDoubleSidedLighting) {
+    // Get world-space normal and view direction for additional point lights
+    vec3 worldNormal = normalize(d.worldSpaceNormal);
+    vec3 worldPos = d.worldSpacePosition.xyz;
+    vec3 viewDir = normalize(d.worldSpaceViewDir);
+
+    // Accumulated additional lighting from point lights
+    vec3 totalDiffuse = vec3(0.0);
+    vec3 totalSpecular = vec3(0.0);
+    GetPointLightContribution(0, worldPos, worldNormal, viewDir, roughness, totalDiffuse, totalSpecular, enableDoubleSidedLighting);
+    GetPointLightContribution(1, worldPos, worldNormal, viewDir, roughness, totalDiffuse, totalSpecular, enableDoubleSidedLighting);
+    GetPointLightContribution(2, worldPos, worldNormal, viewDir, roughness, totalDiffuse, totalSpecular, enableDoubleSidedLighting);
+    GetPointLightContribution(3, worldPos, worldNormal, viewDir, roughness, totalDiffuse, totalSpecular, enableDoubleSidedLighting);
+
+    // Apply additional point light contributions to emissive
+    // Base lighting from engine will be added automatically
+    // Non-metals use albedo for diffuse, metals use it for specular tint
+    vec3 diffuseColor = albedo * (1.0 - metallic);
+    vec3 specularColor = mix(vec3(0.04), albedo, metallic);
+
+    // Additional point light contributions go into emissive
+    return diffuseColor * totalDiffuse + specularColor * totalSpecular;
+  }
+
+  vec3 GetPointLightsContribution(inout SurfaceData d, float roughness, float metallic, vec3 albedo) {
+    return GetPointLightsContribution(d, roughness, metallic, albedo, 0.0);
+  }
+END_SHARED

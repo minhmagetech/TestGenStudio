@@ -1,0 +1,70 @@
+// @generated - Actor Framework Scripts v5
+/**
+ * (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+ */
+
+import {
+  component,
+  Component,
+  subscribe,
+  OnEntityStartEvent,
+  ExecuteOn,
+  property,
+  editor,
+} from 'meta/worlds';
+import {ActorSdkLogicComponent} from 'meta/worlds';
+import { DeathBehavior } from '../Behaviors/CoreBehaviors/DeathBehavior';
+import { StaggerBehavior } from '../Behaviors/CoreBehaviors/StaggerBehavior';
+
+/**
+ * Configures death and stagger behaviors for an actor with ActorHealthComponent.
+ *
+ * Place on the same entity as ActorSdkLogicComponent and ActorHealthComponent.
+ * Automatically wires DeathBehavior (claims all controllers on death) and
+ * optionally StaggerBehavior (pauses actions during hit reaction).
+ */
+@component({
+  description: 'Configures death and stagger behaviors for an actor with ActorHealthComponent. Handles post-death cleanup and hit stagger.',
+})
+export class ActorHealthStarterComponent extends Component {
+  @property()
+  @editor({ description: 'Seconds after death before the entity is destroyed. -1 disables auto-despawn.' })
+  despawnTimer: number = -1;
+
+  @property()
+  @editor({ description: 'If true, disables collision on death. Warning: entity will fall through the floor.' })
+  disableCollisionOnDeath: boolean = false;
+
+  @property()
+  @editor({ description: 'Whether to add StaggerBehavior for hit reactions.' })
+  enableStagger: boolean = true;
+
+  @property()
+  @editor({ description: 'Base priority for the death behavior.' })
+  deathBehaviorPriority: number = 100;
+
+  @property()
+  @editor({ description: 'Base priority for the stagger behavior.' })
+  staggerBehaviorPriority: number = 100;
+
+  @subscribe(OnEntityStartEvent, { execution: ExecuteOn.Owner })
+  onStart() {
+    const actorLogic = this.entity.getComponent(ActorSdkLogicComponent);
+    if (!actorLogic) {
+      console.error('[ActorHealthStarterComponent] No ActorSdkLogicComponent on entity');
+      return;
+    }
+
+    const death = new DeathBehavior();
+    death.basePriority = this.deathBehaviorPriority;
+    death.despawnTimer = this.despawnTimer;
+    death.disableCollisionOnDeath = this.disableCollisionOnDeath;
+    actorLogic.addBehavior(death);
+
+    if (this.enableStagger) {
+      const stagger = new StaggerBehavior();
+      stagger.basePriority = this.staggerBehaviorPriority;
+      actorLogic.addBehavior(stagger);
+    }
+  }
+}

@@ -1,0 +1,76 @@
+
+BEGIN_PROPERTIES
+  [Hide]
+  colorLUTEnabled("colorLUTEnabled", Range(0, 1)) = 0
+  [Hide]
+  colorLUTSaturation("colorLUTSaturation", Range(0, 1)) = 1
+  [Hide]
+  colorLUTContrast("colorLUTContrast", Range(0, 1)) = 1
+  [Hide]
+  colorLUTBrightness("colorLUTBrightness", Range(-1, 1)) = 0
+  [Hide]
+  colorLUTLift("colorLUTLift", Vector3) = (0, 0, 0)
+  [Hide]
+  colorLUTGamma("colorLUTGamma", Vector3) = (1, 1, 1)
+  [Hide]
+  colorLUTGain("colorLUTGain", Vector3) = (1, 1, 1)
+  [Hide]
+  colorLUTHueShift("colorLUTHueShift", Range(0, 360)) = 0
+END_PROPERTIES
+
+BEGIN_SHARED
+  bool isColorLUTEnabled() {
+    return matParams.colorLUTEnabled > 0.5;
+  }
+
+  vec3 colorLUTApplySaturation(vec3 color, float factor) {
+    float lum = luminance(color);
+    return mix(vec3(lum), color, factor);
+  }
+
+  vec3 colorLUTApplyContrast(vec3 color, float cont) {
+    return (color - 0.5) * cont + 0.5;
+  }
+
+  vec3 colorLUTApplyLiftGammaGain(vec3 color, vec3 lft, vec3 gam, vec3 gn) {
+    color *= gn;
+    color += lft * (vec3(1.0) - color);
+    color = max(color, vec3(0.0));
+    color = pow(color, vec3(1.0) / max(gam, vec3(0.001)));
+    return color;
+  }
+
+  vec3 colorLUTApplyHueShift(vec3 color, float shift) {
+    float angle = radians(shift); // input is degrees
+    float cosA = cos(angle);
+    float sinA = sin(angle);
+    // Rodrigues' rotation around the (1,1,1) grey axis
+    vec3 k = vec3(0.57735026919); // 1/sqrt(3)
+    return color * cosA + cross(k, color) * sinA + k * dot(k, color) * (1.0 - cosA);
+  }
+
+  vec3 applyColorLUT(vec3 color) {
+    if (!isColorLUTEnabled()) {
+      return color;
+    }
+
+    color = colorLUTApplyContrast(color, matParams.colorLUTContrast);
+
+    color = colorLUTApplyLiftGammaGain(
+      color,
+      matParams.colorLUTLift.rgb,
+      matParams.colorLUTGamma.rgb,
+      matParams.colorLUTGain.rgb
+    );
+
+    color = colorLUTApplyHueShift(color, matParams.colorLUTHueShift);
+
+    color = colorLUTApplySaturation(color, matParams.colorLUTSaturation);
+
+    color += vec3(matParams.colorLUTBrightness);
+
+    color = max(color, vec3(0.0));
+
+    return color;
+  }
+END_SHARED

@@ -1,0 +1,538 @@
+// @generated - Actor Framework Scripts v12
+/**
+ * (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+ */
+
+import {
+  AnimatorComponent,
+  component,
+  Component,
+  subscribe,
+  property,
+  editor,
+  OnEntityCreateEvent,
+  OnEntityDestroyEvent,
+  OnWorldUpdateEvent,
+  ExecuteOn,
+  subscribePropertyChange,
+  NetworkingService,
+  EventService,
+  Service,
+} from 'meta/worlds';
+import type { Entity, Maybe } from 'meta/worlds';
+
+import {
+  DamageResult,
+  ActorHealthDamagedEventPayload,
+  OnActorHealthDamagedLocalEvent,
+  OnActorHealthDamagedNetworkEvent,
+  ActorHealthDamagedOwnerEvent,
+  ActorHealthTakeDamageEvent,
+} from './ActorHealthEvents';
+import type {
+  DamageInfo,
+  IDamageable,
+  IDamageModifier,
+  DamageTakenCallback,
+  HealedCallback,
+  HealthChangedCallback,
+  DeathCallback,
+  RevivedCallback,
+} from './ActorHealthEvents';
+
+// Re-export for convenience
+export { DamageResult, OnActorHealthDamagedLocalEvent, OnActorHealthDamagedNetworkEvent };
+export type { DamageInfo, IDamageable, IDamageModifier };
+
+import { ActorHealthControllerTypeId } from 'meta/worlds';
+import type { ActorHealthController, ActorHealthControllerData } from 'meta/worlds';
+import {ActorSdkLogicComponent, ActorSdkBlackboardManager} from 'meta/worlds';
+import { CombatBlackboard } from '../Core/Blackboard/Implementations/CombatBlackboard';
+import { BlackboardScope } from 'meta/worlds';
+import { resolveAnimatorComponent } from './ResolveAnimatorComponent';
+
+type GlobalDamagedCallback = (comp: ActorHealthComponent, info: DamageInfo, result: DamageResult) => void;
+
+/**
+ * Full-featured Actor Framework health component. Implements ActorHealthController
+ * (compatible with DeathBehavior/StaggerBehavior/EngageCombatBehavior) and supports
+ * damage types, modifiers, invulnerability, networked hit/death animations, and
+ * CombatBlackboard integration. See the accompanying `.md` for callbacks and usage.
+ */
+@component({
+  description: 'Full-featured health component for Actor Framework entities. Supports damage types, modifiers, invulnerability, callbacks, networked animations, and CombatBlackboard integration.',
+})
+export class ActorHealthComponent extends Component implements ActorHealthController, IDamageable {
+
+  /** push cb + return unsubscribe. Shared by every on*() subscription below. */
+  private static subscribeToList<T>(list: T[], cb: T): () => void {
+    list.push(cb);
+    return () => { const i = list.indexOf(cb); if (i > -1) list.splice(i, 1); };
+  }
+
+  private static globalDamagedCallbacks: GlobalDamagedCallback[] = [];
+
+  /** Global callback for any ActorHealthComponent damage (HUD/analytics). Returns unsubscribe. */
+  public static onHealthComponentDamaged(cb: GlobalDamagedCallback): () => void {
+    return ActorHealthComponent.subscribeToList(ActorHealthComponent.globalDamagedCallbacks, cb);
+  }
+
+  @property()
+  @editor({ description: 'Maximum health points.' })
+  maxHealthValue: number = 100;
+
+  @property()
+  @editor({ description: 'Duration of invulnerability after taking damage (seconds). 0 = no i-frames.' })
+  invulnerabilityDuration: number = 0;
+
+  @property()
+  @editor({ description: 'Whether to include damage display info in DamageResult.' })
+  showDamageText: boolean = false;
+
+  @property()
+  @editor({ description: 'Blackboard group ID for faction-based combat target tracking. Leave empty to skip blackboard updates.' })
+  blackboardGroupId: string = '';
+
+  @property()
+  @editor({ description: 'AnimGraph transition name to trigger on death.' })
+  deathTransitionName: string = 'Death';
+
+  @property()
+  @editor({ description: 'AnimGraph transition name to trigger when hit.' })
+  hitTransitionName: string = 'Hit';
+
+  @property()
+  @editor({ description: 'AnimGraph transition name to return to after a hit reaction completes.' })
+  idleTransitionName: string = 'Idle';
+
+  @property()
+  @editor({ description: 'Duration in seconds the hit reaction plays before returning to idle.' })
+  hitDuration: number = 0.35;
+
+  @property({ isNetworked: true })
+  @editor({ show: false })
+  networkedIsDead: boolean = false;
+
+  @property({ isNetworked: true })
+  @editor({ show: false })
+  networkedIsHit: boolean = false;
+
+  /**
+   * Optional entity to get the AnimatorComponent from.
+   * If set, the AnimatorComponent will be retrieved from this entity.
+   * If null, falls back to this.entity, then to child entities.
+   */
+  @property()
+  @editor({ description: 'Optional entity containing the AnimatorComponent. If null, searches this entity and children.' })
+  animatedEntity: Maybe<Entity> = null;
+
+  private currentHealthValue: number = 100;
+  private isCurrentlyInvulnerable: boolean = false;
+  private invulnerabilityTimer: number = 0;
+  private isDeadValue: boolean = false;
+  private isHitValue: boolean = false;
+
+  private dynamicModifiers = new Map<number, IDamageModifier>();
+  private nextModifierId: number = 1;
+
+  private damageTakenCallbacks: DamageTakenCallback[] = [];
+  private damagePredictedCallbacks: DamageTakenCallback[] = [];
+  private healedCallbacks: HealedCallback[] = [];
+  private healthChangedCallbacks: HealthChangedCallback[] = [];
+  private deathCallbacks: DeathCallback[] = [];
+  private revivedCallbacks: RevivedCallback[] = [];
+
+  private actorLogicComponent: Maybe<ActorSdkLogicComponent> = null;
+  private animatorComponent: Maybe<AnimatorComponent> = null;
+  private hitResetTimeoutId: Maybe<number> = null;
+
+  protected blackboardManager = Service.inject(ActorSdkBlackboardManager);
+
+  get currentHealth(): number { return this.currentHealthValue; }
+  get maxHealth(): number { return this.maxHealthValue; }
+  get isDead(): boolean { return this.isDeadValue; }
+  get isAlive(): boolean { return !this.isDeadValue; }
+  get isInvulnerable(): boolean { return this.isCurrentlyInvulnerable; }
+  get isHit(): boolean { return this.isHitValue; }
+
+  // Instance subscriptions. Each returns an unsubscribe function.
+  public onDamageTaken(cb: DamageTakenCallback) { return ActorHealthComponent.subscribeToList(this.damageTakenCallbacks, cb); }
+  public onDamagePredicted(cb: DamageTakenCallback) { return ActorHealthComponent.subscribeToList(this.damagePredictedCallbacks, cb); }
+  public onHealed(cb: HealedCallback) { return ActorHealthComponent.subscribeToList(this.healedCallbacks, cb); }
+  public onHealthChanged(cb: HealthChangedCallback) { return ActorHealthComponent.subscribeToList(this.healthChangedCallbacks, cb); }
+  public onDeath(cb: DeathCallback) { return ActorHealthComponent.subscribeToList(this.deathCallbacks, cb); }
+  public onRevived(cb: RevivedCallback) { return ActorHealthComponent.subscribeToList(this.revivedCallbacks, cb); }
+
+  @subscribe(OnEntityCreateEvent, { execution: ExecuteOn.Everywhere })
+  onCreate() {
+    this.currentHealthValue = this.maxHealthValue;
+    this.actorLogicComponent = this.entity.getComponent(ActorSdkLogicComponent);
+    this.animatorComponent = null;
+
+    if (this.entity.isOwned()) {
+      this.registerActorController();
+    }
+  }
+
+  @subscribe(OnEntityDestroyEvent)
+  onDestroy() {
+    if (this.hitResetTimeoutId) {
+      clearTimeout(this.hitResetTimeoutId);
+      this.hitResetTimeoutId = null;
+    }
+    this.unregisterActorController();
+  }
+
+  @subscribe(OnWorldUpdateEvent)
+  onUpdate(params: { deltaSeconds?: number; deltaTime?: number }) {
+    const deltaSeconds = params.deltaSeconds ?? params.deltaTime ?? 0;
+    this.updateInvulnerability(deltaSeconds);
+  }
+
+  getHealthData(): ActorHealthControllerData {
+    return {
+      maxHealth: this.maxHealthValue,
+      currentHealth: this.currentHealthValue,
+      isDead: this.isDeadValue,
+      isHit: this.isHitValue,
+    };
+  }
+
+  setHealthData(data: ActorHealthControllerData): void {
+    this.maxHealthValue = data.maxHealth;
+    this.currentHealthValue = data.currentHealth;
+    this.isDeadValue = data.isDead;
+    this.isHitValue = data.isHit;
+    this.healthChangedCallbacks.forEach(cb => { try { cb(this.currentHealthValue, this.maxHealthValue); } catch (e) { console.error(`[ActorHealthComponent] healthChanged callback error: ${String(e)}`); } });
+  }
+
+  registerActorController(): void {
+    this.actorLogicComponent?.registerController(ActorHealthControllerTypeId, this);
+  }
+
+  unregisterActorController(): void {
+    this.actorLogicComponent?.unregisterController(this);
+  }
+
+  @subscribe(ActorHealthTakeDamageEvent)
+  onTakeDamageEvent(payload: DamageInfo) {
+    const damageResult = this.takeDamageInternal(payload);
+    this.broadcastDamageResult(damageResult);
+  }
+
+  /**
+   * Apply damage to this entity.
+   * Handles ownership automatically — sends event to owner if not owned.
+   */
+  public takeDamage(damageInfo: DamageInfo): DamageResult {
+    let damageResult: DamageResult;
+
+    if (this.entity.isOwned()) {
+      damageResult = this.takeDamageInternal(damageInfo);
+      this.broadcastDamageResult(damageResult);
+    } else {
+      // Send damage request to owner — owner mutates authoritative state.
+      this.sendEventToOwner(ActorHealthTakeDamageEvent, damageInfo);
+
+      // Pure prediction for instant UI feedback. Does NOT mutate local health;
+      // authoritative state will arrive via networked properties.
+      damageResult = this.computeDamageResult(damageInfo);
+
+      this.damagePredictedCallbacks.forEach(cb => {
+        try {
+          cb(damageInfo, damageResult.actualDamage);
+        } catch (e) {
+          console.error(`[ActorHealthComponent] Prediction callback error: ${String(e)}`);
+        }
+      });
+    }
+
+    return damageResult;
+  }
+
+  @subscribe(ActorHealthDamagedOwnerEvent, { execution: ExecuteOn.Everywhere })
+  onThisHealthComponentDamaged() {
+    // Override in subclasses for custom hit effects (flash, sound, etc.)
+  }
+
+  @subscribe(OnActorHealthDamagedNetworkEvent, { execution: ExecuteOn.Everywhere })
+  onNetworkHealthDamaged(payload: ActorHealthDamagedEventPayload) {
+    if (!NetworkingService.get().isPlayerContext()) return;
+    if (payload.targetEntity !== this.entity) return;
+    // The owning player already received this event synchronously before the
+    // global broadcast; only proxies should forward the loopback locally.
+    if (this.entity.isOwned()) return;
+
+    EventService.sendLocally(OnActorHealthDamagedLocalEvent, payload);
+  }
+
+  private broadcastDamageResult(damageResult: DamageResult): void {
+    const payload = {
+      targetEntity: this.entity,
+      damageResult,
+    };
+    if (
+      NetworkingService.get().isPlayerContext() &&
+      this.entity.isOwned()
+    ) {
+      EventService.sendLocally(OnActorHealthDamagedLocalEvent, payload);
+    }
+    EventService.sendGlobally(OnActorHealthDamagedNetworkEvent, payload);
+    this.sendEventToOwner(ActorHealthDamagedOwnerEvent, {});
+  }
+
+  /**
+   * Owner-only damage application. Mutates `currentHealthValue` and fires
+   * authoritative callbacks. Assumes `this.entity.isOwned()`.
+   */
+  private takeDamageInternal(damageInfo: DamageInfo): DamageResult {
+    const damageResult = this.computeDamageResult(damageInfo);
+
+    // Apply damage to authoritative state
+    if (!damageResult.wasBlocked && damageResult.actualDamage > 0) {
+      this.currentHealthValue = Math.max(0, this.currentHealthValue - damageResult.actualDamage);
+    }
+
+    if (this.invulnerabilityDuration > 0 && damageResult.actualDamage > 0) {
+      this.setInvulnerable(this.invulnerabilityDuration);
+    }
+
+    this.damageTakenCallbacks.forEach(cb => { try { cb(damageInfo, damageResult.actualDamage); } catch (e) { console.error(`[ActorHealthComponent] damageTaken callback error: ${String(e)}`); } });
+    this.healthChangedCallbacks.forEach(cb => { try { cb(this.currentHealthValue, this.maxHealthValue); } catch (e) { console.error(`[ActorHealthComponent] healthChanged callback error: ${String(e)}`); } });
+
+    ActorHealthComponent.globalDamagedCallbacks.forEach(cb => { try { cb(this, damageInfo, damageResult); } catch (e) { console.error(`[ActorHealthComponent] globalDamaged callback error: ${String(e)}`); } });
+
+    // Handle hit reaction for StaggerBehavior
+    if (!damageResult.wasFatal && damageResult.actualDamage > 0) {
+      this.isHitValue = true;
+      this.networkedIsHit = true;
+
+      if (this.hitResetTimeoutId) {
+        clearTimeout(this.hitResetTimeoutId);
+      }
+      this.hitResetTimeoutId = setTimeout(() => {
+        this.isHitValue = false;
+        this.networkedIsHit = false;
+        this.hitResetTimeoutId = null;
+      }, this.hitDuration * 1000);
+    }
+
+    if (damageResult.wasFatal) {
+      this.die(damageInfo);
+    }
+
+    return damageResult;
+  }
+
+  /**
+   * Pure damage calculation — no state mutation.
+   * Returns the DamageResult that would occur if the damage were applied now.
+   */
+  private computeDamageResult(damageInfo: DamageInfo): DamageResult {
+    if (this.isDeadValue) {
+      return new DamageResult(0, damageInfo.baseDamage, false, this.showDamageText, true);
+    }
+
+    if (this.isCurrentlyInvulnerable && !damageInfo.ignoreInvulnerability) {
+      return new DamageResult(0, damageInfo.baseDamage, false, this.showDamageText, true);
+    }
+
+    const actualDamage = this.calculateDamage(damageInfo);
+    if (actualDamage <= 0) {
+      return new DamageResult(0, damageInfo.baseDamage, false, this.showDamageText, false);
+    }
+
+    const willBeFatal = (this.currentHealthValue - actualDamage) <= 0;
+
+    return new DamageResult(
+      actualDamage,
+      damageInfo.baseDamage,
+      willBeFatal,
+      this.showDamageText,
+      false,
+      damageInfo.isCritical || false
+    );
+  }
+
+  public heal(healAmount: number): number {
+    if (this.isDeadValue || healAmount <= 0) return 0;
+
+    const oldHealth = this.currentHealthValue;
+    this.currentHealthValue = Math.min(this.maxHealthValue, this.currentHealthValue + healAmount);
+    const actualHeal = this.currentHealthValue - oldHealth;
+
+    if (actualHeal > 0) {
+      this.healedCallbacks.forEach(cb => { try { cb(actualHeal); } catch (e) { console.error(`[ActorHealthComponent] healed callback error: ${String(e)}`); } });
+      this.healthChangedCallbacks.forEach(cb => { try { cb(this.currentHealthValue, this.maxHealthValue); } catch (e) { console.error(`[ActorHealthComponent] healthChanged callback error: ${String(e)}`); } });
+    }
+
+    return actualHeal;
+  }
+
+  public setMaxHealth(newMaxHealth: number, healToFull: boolean = false): void {
+    this.maxHealthValue = newMaxHealth;
+    if (healToFull) {
+      this.currentHealthValue = this.maxHealthValue;
+    } else {
+      this.currentHealthValue = Math.min(this.currentHealthValue, this.maxHealthValue);
+    }
+    this.healthChangedCallbacks.forEach(cb => { try { cb(this.currentHealthValue, this.maxHealthValue); } catch (e) { console.error(`[ActorHealthComponent] healthChanged callback error: ${String(e)}`); } });
+  }
+
+  public setCurrentHealth(health: number, suppressEvents: boolean = false): void {
+    this.currentHealthValue = Math.max(0, Math.min(health, this.maxHealthValue));
+
+    if (suppressEvents) {
+      this.isDeadValue = this.currentHealthValue <= 0;
+    } else {
+      if (this.currentHealthValue <= 0 && !this.isDeadValue) {
+        this.die();
+      } else if (this.currentHealthValue > 0 && this.isDeadValue) {
+        this.revive();
+      }
+      this.healthChangedCallbacks.forEach(cb => { try { cb(this.currentHealthValue, this.maxHealthValue); } catch (e) { console.error(`[ActorHealthComponent] healthChanged callback error: ${String(e)}`); } });
+    }
+  }
+
+  public die(damageInfo?: DamageInfo): void {
+    if (this.isDeadValue) return;
+
+    this.isDeadValue = true;
+    this.currentHealthValue = 0;
+
+    // Cancel hit reaction
+    if (this.hitResetTimeoutId) {
+      clearTimeout(this.hitResetTimeoutId);
+      this.hitResetTimeoutId = null;
+    }
+    this.isHitValue = false;
+    this.networkedIsHit = false;
+
+    // Trigger death on all clients
+    if (this.entity.isOwned()) {
+      this.networkedIsDead = true;
+    }
+
+    // Update CombatBlackboard
+    this.updateCombatBlackboardOnDeath();
+
+    this.deathCallbacks.forEach(cb => { try { cb(damageInfo); } catch (e) { console.error(`[ActorHealthComponent] death callback error: ${String(e)}`); } });
+  }
+
+  public revive(healthAmount?: number): void {
+    if (!this.isDeadValue) return;
+
+    this.isDeadValue = false;
+    this.currentHealthValue = healthAmount ?? this.maxHealthValue;
+
+    if (this.entity.isOwned()) {
+      this.networkedIsDead = false;
+    }
+
+    this.revivedCallbacks.forEach(cb => { try { cb(); } catch (e) { console.error(`[ActorHealthComponent] revived callback error: ${String(e)}`); } });
+    this.healthChangedCallbacks.forEach(cb => { try { cb(this.currentHealthValue, this.maxHealthValue); } catch (e) { console.error(`[ActorHealthComponent] healthChanged callback error: ${String(e)}`); } });
+  }
+
+  public setInvulnerable(duration: number): void {
+    this.isCurrentlyInvulnerable = true;
+    this.invulnerabilityTimer = duration;
+  }
+
+  private updateInvulnerability(deltaSeconds: number): void {
+    if (this.isCurrentlyInvulnerable) {
+      this.invulnerabilityTimer -= deltaSeconds;
+      if (this.invulnerabilityTimer <= 0) {
+        this.isCurrentlyInvulnerable = false;
+      }
+    }
+  }
+
+  public addDamageModifier(modifier: IDamageModifier): number {
+    if (!modifier) return 0;
+    const id = this.nextModifierId++;
+    this.dynamicModifiers.set(id, modifier);
+    return id;
+  }
+
+  public removeDamageModifier(id: number): boolean {
+    if (id === 0) return false;
+    return this.dynamicModifiers.delete(id);
+  }
+
+  public hasDamageModifier(id: number): boolean {
+    return id !== 0 && this.dynamicModifiers.has(id);
+  }
+
+  public clearAllDamageModifiers(): void {
+    this.dynamicModifiers.clear();
+  }
+
+  protected calculateDamage(damageInfo: DamageInfo): number {
+    let damage = damageInfo.baseDamage;
+    for (const modifier of this.dynamicModifiers.values()) {
+      damage = modifier.modifyIncomingDamage(damage, damageInfo);
+    }
+    return Math.max(0, damage);
+  }
+
+  private updateCombatBlackboardOnDeath(): void {
+    if (!this.blackboardGroupId) return;
+
+    const combatBlackboard = this.blackboardManager.getBlackboard(CombatBlackboard, /* filter */ undefined,
+      this.blackboardGroupId,
+      BlackboardScope.Group
+    );
+
+    if (combatBlackboard) {
+      combatBlackboard.updateTarget(this.entity, { isDead: true }, false);
+    }
+  }
+
+  /**
+   * Resolves the AnimatorComponent lazily on first use using the
+   * standard fallback chain (`animatedEntity` → this entity → children).
+   */
+  private resolveAnimator(): Maybe<AnimatorComponent> {
+    if (this.animatorComponent) {
+      return this.animatorComponent;
+    }
+    this.animatorComponent = resolveAnimatorComponent(this.entity, this.animatedEntity);
+    return this.animatorComponent;
+  }
+
+  @subscribePropertyChange('networkedIsDead')
+  onNetworkedIsDeadChanged() {
+    const animator = this.resolveAnimator();
+    if (!animator) return;
+
+    if (this.networkedIsDead) {
+      if (this.deathTransitionName) {
+        animator.requestTransition(this.deathTransitionName);
+      }
+    } else {
+      // Revive: return non-owners to idle instead of leaving them stuck in the death pose.
+      if (this.idleTransitionName) {
+        animator.requestTransition(this.idleTransitionName);
+      }
+    }
+  }
+
+  @subscribePropertyChange('networkedIsHit')
+  onNetworkedIsHitChanged() {
+    if (this.isDeadValue) return;
+
+    const animator = this.resolveAnimator();
+    if (!animator) return;
+
+    if (this.networkedIsHit) {
+      if (this.hitTransitionName) {
+        animator.requestTransition(this.hitTransitionName);
+      }
+    } else {
+      if (this.idleTransitionName) {
+        animator.requestTransition(this.idleTransitionName);
+      }
+    }
+  }
+
+}

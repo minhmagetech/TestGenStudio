@@ -1,0 +1,94 @@
+BEGIN_SAMPLERS
+  customSampler maxanisotropy(16.0)
+END_SAMPLERS
+
+BEGIN_DEFINES
+
+  // this is a little trick to allow us to access the elements without triggering the surface
+  // shader parser to add defines/tangents to the shader. This keeps the vertex smaller, and makes
+  // sure automatic things triggered by the file being parsed. Note, I should likely add
+  // a no parse option to the surface system.
+  #define _DOT_ .
+  #define _SOURCETANGENTSPACENORMAL_ s _DOT_ tangentSpaceNormal
+  #define _TARGETTANGENTSPACENORMAL_ t _DOT_ tangentSpaceNormal
+  #define _SOURCEBASECOLOR_ s _DOT_ baseColor
+  #define _TARGETBASECOLOR_ t _DOT_ baseColor
+  #define _SOURCEALPHA_ s _DOT_ alpha
+  #define _TARGETALPHA_ t _DOT_ alpha
+  #define _SOURCEROUGHNESS_ s _DOT_ roughness
+  #define _TARGETROUGHNESS_ t _DOT_ roughness
+  #define _SOURCEMETALLIC_ s _DOT_ metallic
+  #define _TARGETMETALLIC_ t _DOT_ metallic
+  #define _SOURCEOCCLUSION_ s _DOT_ occlusion
+  #define _TARGETOCCLUSION_ t _DOT_ occlusion
+  #define _SOURCEEMISSIVE_ s _DOT_ emissive
+  #define _TARGETEMISSIVE_ t _DOT_ emissive
+
+  struct LayerSurface
+  {
+    vec3 baseColor;
+    float alpha;
+    vec3 tangentSpaceNormal;
+    float roughness;
+    float occlusion;
+    float metallic;
+    vec3 emissive;
+    float weight;
+  };
+
+  // you must initialize the surface, or the shader will go black in some cases.
+  LayerSurface initLayerSurface() {
+    LayerSurface s;
+    s.weight = 1.0;
+    _SOURCEROUGHNESS_ = 1.0;
+    _SOURCEBASECOLOR_ = vec3(1);
+    _SOURCEALPHA_ = 1.0;
+    _SOURCEOCCLUSION_ = 1.0;
+    _SOURCEMETALLIC_ = 0.0;
+    _SOURCETANGENTSPACENORMAL_ = vec3(0, 0, 1);
+    _SOURCEEMISSIVE_ = vec3(0);
+    return s;
+  }
+
+  // so we can undef/define this to override it in the surface.
+  #define DEFAULT_SAMPLER_COLOR customSampler
+  #define DEFAULT_SAMPLER_PBR customSampler
+  #define DEFAULT_SAMPLER_NORMAL customSampler
+
+END_DEFINES
+
+BEGIN_SURFACE
+
+vec3 blendDetailNormal(vec3 n1, vec3 n2) {
+  return normalize(vec3(n1.xy + n2.xy, n1.z*n2.z));
+}
+
+float heightBlend(float h1, float h2, float slope, float contrast) {
+  h2 = 1.0 - h2;
+  float tween = saturate((slope - min(h1, h2)) / max(abs(h1-h2), 0.0001));
+  float blend = saturate((tween - (1.0-contrast)) / max(contrast, 0.0001));
+  return blend;
+}
+
+void blendSurface(inout Surface s, LayerSurface t) {
+  float w = saturate(t.weight);
+  _SOURCEBASECOLOR_ = mix(_SOURCEBASECOLOR_, _TARGETBASECOLOR_, w);
+  _SOURCEALPHA_ = mix(_SOURCEALPHA_, _TARGETALPHA_, w);
+  _SOURCEMETALLIC_ = mix(_SOURCEMETALLIC_, _TARGETMETALLIC_, w);
+  _SOURCEOCCLUSION_ = mix(_SOURCEOCCLUSION_, _TARGETOCCLUSION_, w);
+  _SOURCEROUGHNESS_ = mix(_SOURCEROUGHNESS_, _TARGETROUGHNESS_, w);
+  _SOURCETANGENTSPACENORMAL_ = mix(_SOURCETANGENTSPACENORMAL_, _TARGETTANGENTSPACENORMAL_, w);
+  _SOURCEEMISSIVE_ = mix(_SOURCEEMISSIVE_, _TARGETEMISSIVE_, w);
+}
+
+void assignSurface(inout Surface s, LayerSurface t) {
+  _SOURCEBASECOLOR_ = _TARGETBASECOLOR_;
+  _SOURCEALPHA_ = _TARGETALPHA_;
+  _SOURCEMETALLIC_ = _TARGETMETALLIC_;
+  _SOURCEOCCLUSION_ = _TARGETOCCLUSION_;
+  _SOURCEROUGHNESS_ = _TARGETROUGHNESS_;
+  _SOURCETANGENTSPACENORMAL_ = _TARGETTANGENTSPACENORMAL_;
+  _SOURCEEMISSIVE_ = _TARGETEMISSIVE_;
+}
+
+END_SURFACE

@@ -1,0 +1,4 @@
+    stripCommonFilesExceptions=[
+        # Allow CLAUDE.md files to be synced (overrides global stripCommonFiles pattern)
+        r"@(^|/)CLAUDE\.md$@i",
+    ],

@@ -1,0 +1,110 @@
+// @generated - Actor Framework Scripts v12
+/**
+ * (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
+ */
+
+import { LocalEvent, NetworkEvent, serializable, property } from 'meta/worlds';
+import type { Entity, Maybe } from 'meta/worlds';
+
+/** Damage being applied. */
+export interface DamageInfo {
+  baseDamage: number;
+  damageType?: string;
+  /** Direct source (projectile, hazard, etc.) */
+  source?: Entity;
+  /** Who initiated the attack (player, enemy). */
+  attacker?: Entity;
+  /** If true, bypasses invulnerability frames. */
+  ignoreInvulnerability?: boolean;
+  isCritical?: boolean;
+  knockbackMultiplier?: number;
+}
+
+/** Outcome of a takeDamage() call. */
+@serializable()
+export class DamageResult {
+  @property() readonly actualDamage: number;
+  @property() readonly baseDamage: number;
+  @property() readonly wasFatal: boolean;
+  @property() readonly shouldDisplayText: boolean;
+  /** Fully blocked (invulnerability or already dead). */
+  @property() readonly wasBlocked: boolean;
+  @property() readonly wasCritical: boolean;
+
+  constructor(
+    actualDamage: number = 0,
+    baseDamage: number = 0,
+    wasFatal: boolean = false,
+    shouldDisplayText: boolean = false,
+    wasBlocked: boolean = false,
+    wasCritical: boolean = false,
+  ) {
+    this.actualDamage = actualDamage;
+    this.baseDamage = baseDamage;
+    this.wasFatal = wasFatal;
+    this.shouldDisplayText = shouldDisplayText;
+    this.wasBlocked = wasBlocked;
+    this.wasCritical = wasCritical;
+  }
+}
+
+/** Anything that can take damage / heal. Useful for non-entity damageable systems. */
+export interface IDamageable {
+  takeDamage(damageInfo: DamageInfo): DamageResult;
+  heal(healAmount: number): number;
+  readonly currentHealth: number;
+  readonly maxHealth: number;
+  readonly isDead: boolean;
+  readonly isAlive: boolean;
+}
+
+/** Damage modifier (armor, resistances, buffs). */
+export interface IDamageModifier {
+  modifyIncomingDamage(damage: number, damageInfo: DamageInfo): number;
+}
+
+@serializable()
+export class ActorHealthDamagedEventPayload {
+  @property() readonly targetEntity: Maybe<Entity> = null;
+  @property() readonly damageResult?: DamageResult;
+}
+
+/** Wire payload for cross-ownership damage requests. Mirrors DamageInfo. */
+@serializable()
+export class ActorHealthTakeDamageEventPayload implements DamageInfo {
+  @property() readonly baseDamage: number = 0;
+  @property() readonly damageType?: string | undefined = undefined;
+  @property() readonly source?: Entity | undefined = undefined;
+  @property() readonly attacker?: Entity | undefined = undefined;
+  @property() readonly ignoreInvulnerability?: boolean | undefined = undefined;
+  @property() readonly isCritical?: boolean | undefined;
+  @property() readonly knockbackMultiplier?: number | undefined = undefined;
+}
+
+/** Client-local authoritative damage event for UI/VFX. Immediate on a player owner; broadcast-bridged on proxies. */
+export const OnActorHealthDamagedLocalEvent = new LocalEvent(
+  'OnActorHealthDamagedLocal',
+  ActorHealthDamagedEventPayload
+);
+
+/** Owner-authoritative damage broadcast for all sides. Subscribe with `{ execution: ExecuteOn.Everywhere }`. */
+export const OnActorHealthDamagedNetworkEvent = new NetworkEvent(
+  'OnActorHealthDamagedNetwork',
+  ActorHealthDamagedEventPayload
+);
+
+/** Per-entity damage event for the damaged entity (hit flash, etc.). Cheaper than the global broadcast. */
+export const ActorHealthDamagedOwnerEvent = new NetworkEvent('ActorHealthDamagedOwnerEvent');
+
+/** Client → owner: request authoritative damage application. */
+export const ActorHealthTakeDamageEvent = new NetworkEvent(
+  'ActorHealthTakeDamage',
+  ActorHealthTakeDamageEventPayload
+);
+
+// Callback types for ActorHealthComponent.onX() subscriptions.
+export type DamageTakenCallback = (damageInfo: DamageInfo, actualDamage: number) => void;
+export type HealedCallback = (healAmount: number) => void;
+export type HealthChangedCallback = (currentHealth: number, maxHealth: number) => void;
+export type DeathCallback = (damageInfo?: DamageInfo) => void;
+export type RevivedCallback = () => void;

@@ -1,0 +1,395 @@
+BEGIN_SHARED
+
+// ----------------------------------------------------------------------------
+const float kBBMinRoughness  = 0.08;
+
+struct BBCachedSurface {
+  hvec3 diffuseColor;
+  hvec3 worldNormal;
+  vec3 worldSpacePosition;
+  hvec3 surfaceToCameraDir;
+  hvec3 reflectivityF0; // blended reflectivity of metallic and dielectric
+  hfloat dielectricF0;
+  hfloat nDotV;
+  hfloat perceptualRoughness;
+  hfloat roughnessSq;
+  hfloat metalness;
+  hfloat occlusion;
+};
+
+struct BBLightConfig {
+  Radiance iblDiffuse;
+  Radiance emissive;
+  hfloat radianceMultiplier;
+  hfloat indirectMultiplier;
+  hfloat directMultiplier;
+  hfloat enableDoubleSidedLighting;
+  hfloat doubleSidedLightingMultiplier;
+};
+
+struct AttenuatedLightParams {
+  Irradiance irradiance;
+  vec3 direction;
+};
+
+#define colorSpaceDielectricSpec vec4(0.04, 0.04, 0.04, 1.0 - 0.04) // standard dielectric reflectivity coef at incident angle (= 4%)
+
+// Function prototypes
+float approximateIblMipFastCustom(float perceptualRoughness, int lastIblCubeMip);
+hvec3 calculateSpecularLightCustom(BBCachedSurface surface);
+vec3 lazarovEnvironmentBRDFCustom(float g, float nDotV, vec3 f0);
+Radiance calculateDirectRadianceCustom(BBCachedSurface surface, BBLightConfig config, AttenuatedLightParams light, bool processDiffuse);
+vec3 fresnelSchlickCustom(float cosTheta, vec3 f0);
+float distributionGGXCustom(float nDotH, float alpha);
+float geometrySmithCustom(float nDotV, float nDotL, float alpha);
+float geometrySchlickGGXCustom(float cosTheta, float alpha);
+hvec3 diffuseLambertCustom(hvec3 albedo);
+hvec3 tonemapCustom(hvec3 radiance);
+hvec3 tonemapACESFilmicCustom(hvec3 col);
+hvec3 calculateReflectivityF0Custom(hfloat metalness, hvec3 baseColor, hfloat reflectivity);
+hfloat oneMinusReflectivityFromMetallicCustom(hfloat metallic);
+vec3 DiffuseFromMetallicCustom(vec3 albedo, float metallic);
+hfloat DiffuseCustom(hfloat NdotV, hfloat NdotL, hfloat LdotH, hfloat metalness);
+hfloat Pow5Custom(hfloat x);
+
+// ----------------------------------------------------------------------------
+
+// Bypass the ban on these functions to enable debug visualization for lighting
+#define vizSetBakedLightingCustom vizSetBakedLighting
+#define vizSetIndirectDiffuseCustom vizSetIndirectDiffuse
+#define vizSetIndirectSpecularCustom vizSetIndirectSpecular
+#define vizAccumulateDirectDiffuseCustom vizAccumulateDirectDiffuse
+#define vizAccumulateDirectSpecularCustom vizAccumulateDirectSpecular
+
+// ----------------------------------------------------------------------------
+Radiance calculateIndirectRadianceCustom(BBCachedSurface surface, BBLightConfig config) {
+  hvec3 specularLight = calculateSpecularLightCustom(surface);
+  hvec3 diffuseLight = hvec3(config.iblDiffuse.value);
+
+  // Compute the blended reflectance of metallic and dielectric from the blended f0
+  // Keep BRDF calculation at full precision for accuracy
+  vec3 fullPrecisionReflectance = lazarovEnvironmentBRDFCustom(1.0f - surface.perceptualRoughness, surface.nDotV, vec3(surface.reflectivityF0));
+  hvec3 reflectance = hvec3(fullPrecisionReflectance);
+
+  // Diffuse throughput must be computed from the dielectric f0, not the blended one
+  float fullPrecisionDiffuseThroughput = 1.0f - lazarovEnvironmentBRDFCustom(1.0f - surface.perceptualRoughness, surface.nDotV, vec3(surface.dielectricF0)).x;
+  hfloat diffuseThroughput = hfloat(fullPrecisionDiffuseThroughput);
+
+  // calculate diffuse and specular radiance factor contributions
+  // multiply diffuse by radianceMultiplier (shadow factor)
+  hvec3 specular = specularLight * reflectance;
+  hvec3 diffuse = diffuseLight * surface.diffuseColor;
+  specular *= surface.occlusion * config.indirectMultiplier;
+  diffuse *= surface.occlusion * diffuseThroughput * config.indirectMultiplier;
+
+  Radiance radiance;
+  radiance.value = diffuse + hvec3(specular);
+
+#ifdef DEBUG
+  vizSetBakedLightingCustom(vec3(diffuseLight));
+  vizSetIndirectSpecularCustom(vec3(specular));
+  vizSetIndirectDiffuseCustom(vec3(diffuse));
+#endif
+
+  return radiance;
+}
+
+// ----------------------------------------------------------------------------
+vec3 lazarovEnvironmentBRDFCustom(float g, float nDotV, vec3 f0) {
+  vec4 t = vec4(1 / 0.96, 0.475, (0.0275 - 0.25 * 0.04) / 0.96, 0.25);
+  t *= vec4(g, g, g, g);
+  t += vec4(0, 0, (0.015 - 0.75 * 0.04) / 0.96, 0.75);
+  float a0 = t.x * min(t.y, exp2(-9.28 * nDotV)) + t.z;
+  float a1 = t.w;
+  return clamp(a0 + f0 * (a1 - a0), 0.0f, 1.0f);
+}
+
+// ----------------------------------------------------------------------------
+hvec3 calculateSpecularLightCustom(BBCachedSurface surface) {
+  // calculate the number of LODs in the reflection cube
+  int numIblReflectionCubeMips = textureQueryLevels(samplerCube(globalIblReflectionCubeMap, linearWrapSampler));
+  int lastIblReflectionCubeMip = numIblReflectionCubeMips - 1;
+
+  // calculate the reflection vector
+  vec3 reflectionDir = reflect(-vec3(surface.surfaceToCameraDir), vec3(surface.worldNormal));
+
+  // sample specular (roughness-based mip) - texture sampling is already full precision
+  float specularMip = approximateIblMipFastCustom(surface.perceptualRoughness, lastIblReflectionCubeMip);
+  hvec3 specularLight = hvec3(textureLod(samplerCube(globalIblReflectionCubeMap, linearWrapSampler), reflectionDir, specularMip).rgb);
+
+  // tint/modulate the IBL reflection input directly from uniforms (stays in FP32)
+  // specularLight *= hvec3(lightUniforms.iblReflectionTint.rgb);
+
+  return specularLight;
+}
+
+// ----------------------------------------------------------------------------
+// This approximates the roughness-based mip bias to use when calculating specular IBL
+// Rougher approximation that is faster
+float approximateIblMipFastCustom(float perceptualRoughness, int lastIblCubeMip) {
+  // Using the same mapping functions as Filament/Cmgen:
+  // perceptualRoughness-to-LOD (here): lod = perceptualRougthness * (2 - perceptualRougthness)
+  // LOD-to-perceptualRoughness (TextureCube.cpp): perceptualRougthness = 1 - sqrt(1 - lod)
+  return lastIblCubeMip * perceptualRoughness * (2.0 - perceptualRoughness);
+}
+
+// ----------------------------------------------------------------------------
+Radiance calculateRuntimeRadianceCustom(BBCachedSurface cachedSurface, BBLightConfig config, vec3 worldPos) {
+  // Accumulate the distant light direct Radiance - convert uniforms directly
+  AttenuatedLightParams distantLightParams;
+  distantLightParams.irradiance.value = getDistantLightIntensity();
+  distantLightParams.direction = -getDistantLightDirection();
+  Radiance runtimeRadiance = calculateDirectRadianceCustom(cachedSurface, config, distantLightParams, true);
+
+  // Accumulate froxel point and spot lights via surface_public API
+  LightsQuery lightsQuery;
+  lightsQuery.worldPos = worldPos;
+  LightsInfo lightsInfo = getLightsInfo(lightsQuery);
+
+  for (uint i = 0u; i < lightsInfo.pointLightCount; i++) {
+    PointLightInfo pli = getPointLightInfo(lightsInfo, i);
+    hvec3 toLight = hvec3(pli.position - worldPos);
+    hfloat distSq = dot(toLight, toLight);
+    hfloat intensity = hfloat(1) / distSq;
+    hfloat cutoff = hfloat(pli.attenuationCutoff);
+    intensity -= (cutoff * distSq) * (cutoff * distSq) * cutoff;
+    intensity = max(intensity, hfloat(0));
+    AttenuatedLightParams pointLight;
+    pointLight.direction = vec3(normalize(toLight));
+    pointLight.irradiance.value = hvec3(pli.intensity) * intensity;
+    runtimeRadiance.value += calculateDirectRadianceCustom(cachedSurface, config, pointLight, true).value;
+  }
+
+  for (uint i = 0u; i < lightsInfo.spotLightCount; i++) {
+    SpotLightInfo sli = getSpotLightInfo(lightsInfo, i);
+    hvec3 toLight = hvec3(sli.position - worldPos);
+    hfloat distSq = dot(toLight, toLight);
+    hfloat intensity = hfloat(1) / distSq;
+    hfloat cutoff = hfloat(sli.attenuationCutoff);
+    intensity -= (cutoff * distSq) * (cutoff * distSq) * cutoff;
+    intensity = max(intensity, hfloat(0));
+    hvec3 lightDirNorm = normalize(toLight);
+    intensity *= smoothstep(hfloat(0), hfloat(1), -dot(lightDirNorm, hvec3(sli.direction)) * hfloat(sli.coneScale) + hfloat(sli.coneBias));
+    AttenuatedLightParams spotLight;
+    spotLight.direction = vec3(lightDirNorm);
+    spotLight.irradiance.value = hvec3(sli.intensity) * intensity;
+    runtimeRadiance.value += calculateDirectRadianceCustom(cachedSurface, config, spotLight, true).value;
+  }
+
+  return runtimeRadiance;
+}
+
+// ----------------------------------------------------------------------------
+hfloat geometryGGXSmithCorrelatedG2Custom(hfloat nDotV, hfloat nDotL, hfloat alpha)
+{
+  // Approximation (used in UE, CoD, and others)
+  hfloat absNoV = abs(nDotV);
+  hfloat absNoL = abs(nDotL);
+  return hfloat(0.5) / mix(hfloat(2) * absNoL * absNoV, absNoL + absNoV, alpha);
+}
+
+// ----------------------------------------------------------------------------
+Radiance calculateDirectRadianceCustom(BBCachedSurface surface, BBLightConfig config, AttenuatedLightParams light, bool processDiffuse) {
+  vec3 h_fp32 = normalize(vec3(surface.surfaceToCameraDir + light.direction));
+  float nDotH_fp32 = dot(vec3(surface.worldNormal), h_fp32);
+
+  hfloat hDotV = dot(hvec3(h_fp32), surface.surfaceToCameraDir);
+  hfloat nDotL = dot(surface.worldNormal, light.direction);
+  vec3 adjustedNormal = surface.worldNormal * ((nDotL * config.enableDoubleSidedLighting) < 0.0 ? -1.0 : 1.0);
+  float nDotLDoubleSided = dot(adjustedNormal, light.direction) * (config.enableDoubleSidedLighting > 0.0 ? 0.50 : 1.0) + (config.enableDoubleSidedLighting > 0.0 ? 0.50 : 0.0);
+
+  hvec3 F = fresnelSchlickCustom(hDotV, surface.reflectivityF0);
+  hfloat alpha = max(hfloat(kBBMinRoughness * kBBMinRoughness), surface.roughnessSq);
+  hfloat D = distributionGGXCustom(nDotH_fp32, alpha);
+  hfloat G = geometryGGXSmithCorrelatedG2Custom(surface.nDotV, nDotL, alpha); // Includes 1/(4 * N.V * N.L) BRDF term
+
+  hvec3 specular = F * (D * G * max(nDotL, 0.0) * config.radianceMultiplier);
+
+  hvec3 diffuseBase = surface.diffuseColor * (hvec3(hfloat(1)) - F) * (kOneOverPiHalf * config.radianceMultiplier);
+  hvec3 diffuseFlipped = diffuseBase * max(nDotLDoubleSided, 0.0);
+  float mixAmount = config.enableDoubleSidedLighting > 0.0 ? config.doubleSidedLightingMultiplier : 0.0;
+  hvec3 diffuse = mix(diffuseBase * max(nDotL, 0.0), diffuseFlipped, mixAmount);
+
+  Radiance radiance;
+  radiance.value = (diffuse + specular) * light.irradiance.value * config.directMultiplier;
+
+#ifdef DEBUG
+  vizAccumulateDirectDiffuseCustom(vec3(diffuse * light.irradiance.value * config.directMultiplier));
+  vizAccumulateDirectSpecularCustom(vec3(specular * light.irradiance.value * config.directMultiplier));
+#endif
+
+  return radiance;
+}
+
+// ----------------------------------------------------------------------------
+vec3 fresnelSchlickCustom(float cosTheta, vec3 f0) {
+  //f0 = vec3(0.0);
+  return f0 + (vec3(1.0) - f0) * pow(1.0 - cosTheta, 5.0);
+}
+
+// ----------------------------------------------------------------------------
+float distributionGGXCustom(float nDotH, float alpha) {
+  float a = alpha;
+  float f = (a - 1.0) * ((a + 1.0) * (nDotH * nDotH)) + 1.0;
+  return (a * a) / (kPi * f * f);
+
+  //float alphaSq = alpha * alpha;
+  //float f = (nDotH * alphaSq - nDotH) * nDotH + 1.0;
+  //return alphaSq / (kPi * f * f);
+}
+
+// ----------------------------------------------------------------------------
+float geometrySmithCustom(float nDotV, float nDotL, float alpha) {
+  float v  = geometrySchlickGGXCustom(nDotV, alpha);
+  float l  = geometrySchlickGGXCustom(nDotL, alpha);
+  return v * l;
+}
+
+// ----------------------------------------------------------------------------
+float geometrySchlickGGXCustom(float cosTheta, float alpha) {
+  float alphaSq = alpha * alpha;
+  return 2.0 * cosTheta / (cosTheta + sqrt(alphaSq + (1.0 - alphaSq) * (cosTheta * cosTheta)));
+}
+
+// ----------------------------------------------------------------------------
+hvec3 diffuseLambertCustom(hvec3 albedo) {
+   return albedo / kPiHalf;
+   //return albedo;
+}
+
+// ----------------------------------------------------------------------------
+Radiance accumulateCustom(Radiance a, Radiance b) {
+    a.value += b.value;
+    return a;
+}
+
+// ----------------------------------------------------------------------------
+void finalizeLitFragmentCustom(inout hvec3 finalRadiance) {
+  // Tonemap operates on half precision
+  finalRadiance = tonemapCustom(finalRadiance);
+}
+
+// ----------------------------------------------------------------------------
+hvec3 tonemapCustom(hvec3 radiance) {
+  #if defined(DISABLE_TONEMAP)
+    return radiance;
+  #endif
+  return tonemapACESFilmicCustom(radiance);
+}
+
+// ----------------------------------------------------------------------------
+hvec3 tonemapACESFilmicCustom(hvec3 col) {
+  // https://knarkowicz.wordpress.com/.../aces-filmic-tone.../
+  // Use half-precision constants
+  const hfloat ACES_A_HALF = hfloat(2.51);
+  const hfloat ACES_C_HALF = hfloat(2.43);
+  const hvec3 ACES_B_HALF = hvec3(0.03);
+  const hvec3 ACES_D_HALF = hvec3(0.59);
+  const hvec3 ACES_E_HALF = hvec3(0.14);
+
+  hvec3 numerator = col * (col * ACES_A_HALF + ACES_B_HALF);
+  hvec3 denominator = col * (col * ACES_C_HALF + ACES_D_HALF) + ACES_E_HALF;
+  return clamp(numerator / denominator, hvec3(0.0), hvec3(1.0));
+}
+
+// ----------------------------------------------------------------------------
+BBCachedSurface cacheSurfaceValuesCustom(Surface surface, SurfaceData surfaceData) {
+
+  // Calculate world space normal
+  vec3 worldNormalNormalized = surface.worldSpaceNormal;
+  mat3 tbn = mat3(surfaceData.worldSpaceTangent, surfaceData.worldSpaceBitangent, surfaceData.worldSpaceNormal);
+  worldNormalNormalized = (tbn * vec3(surface.tangentSpaceNormal));
+  worldNormalNormalized = normalize(worldNormalNormalized);
+
+  BBCachedSurface cached;
+  cached.diffuseColor = hvec3(DiffuseFromMetallicCustom(surface.baseColor, float(surface.metallic)));
+  cached.worldNormal = worldNormalNormalized;//normalize(surface.worldSpaceNormal);
+  cached.worldSpacePosition = surfaceData.worldSpacePosition.xyz;
+
+  // Keep camera position calculation at full precision
+  vec3 fullPrecisionCameraPos = getWorldCameraPos().xyz;
+  vec3 surfaceToCameraDir = normalize(fullPrecisionCameraPos - surfaceData.worldSpacePosition.xyz);
+  cached.surfaceToCameraDir = hvec3(surfaceToCameraDir);
+
+  // BRDF calculations
+  hvec3 reflectivityF0 = calculateReflectivityF0Custom(surface.metallic, surface.baseColor, surface.reflectivity);
+  cached.reflectivityF0 = reflectivityF0;
+
+  // For dielectrics (metalness=0): F0 = 0.16 * reflectivity² - calculate at fp32 since it's used in fp32 BRDF
+  cached.dielectricF0 = 0.16hf * surface.reflectivity * surface.reflectivity;
+
+  // Compute nDotV at fp32 using the fp32 surfaceToCameraDir before downconversion
+  cached.nDotV = dot(surface.worldSpaceNormal, cached.surfaceToCameraDir);
+  cached.perceptualRoughness = surface.roughness;
+  cached.roughnessSq = surface.roughness * surface.roughness;
+  cached.metalness = surface.metallic;
+  cached.occlusion = surface.occlusion;
+  return cached;
+}
+
+// ----------------------------------------------------------------------------
+hvec3 calculateReflectivityF0Custom(hfloat metalness, hvec3 baseColor, hfloat reflectivity) {
+  float kInsulatorRange[2] = {0.01, 0.07};
+  float kConductorRange[2] = {0.50, 1.00};
+  float kInsulatorF0 = mix(kInsulatorRange[0], kInsulatorRange[1], float(reflectivity));
+  float kConductorF0 = mix(kConductorRange[0], kConductorRange[1], float(reflectivity));
+  // Note: reflection is tinted by the baseColor for a metal, but not for a plastic
+  return hvec3(mix(kInsulatorF0 * vec3(1,1,1), kConductorF0 * vec3(baseColor), float(metalness)));
+  //return 0.16hf * reflectivity * reflectivity * (1.0hf - metalness) + baseColor * metalness;
+}
+
+// ----------------------------------------------------------------------------
+float oneMinusReflectivityFromMetallicCustom(float metallic)
+{
+    float oneMinusDielectricSpec = colorSpaceDielectricSpec.a;
+    return oneMinusDielectricSpec - metallic * oneMinusDielectricSpec;
+}
+
+// ----------------------------------------------------------------------------
+vec3 DiffuseFromMetallicCustom(vec3 albedo, float metallic)
+{
+    float oneMinusReflectivity = oneMinusReflectivityFromMetallicCustom(metallic);
+    return albedo * oneMinusReflectivity;
+}
+
+// ----------------------------------------------------------------------------
+hfloat DiffuseCustom(hfloat NdotV, hfloat NdotL, hfloat VdotH, hfloat metalness)
+{
+    hfloat fd90 = 0.5hf + 2.0hf * VdotH * VdotH * metalness;
+    // Two schlick fresnel term
+    hfloat lightScatter   = (1.0hf + (fd90 - 1.0hf) * Pow5Custom(1.0hf - NdotL));
+    hfloat viewScatter    = (1.0hf + (fd90 - 1.0hf) * Pow5Custom(1.0hf - NdotV));
+
+    return lightScatter * viewScatter;
+}
+
+// ----------------------------------------------------------------------------
+vec3 CalculateFinalRadianceCustom(BBCachedSurface cachedSurface, BBLightConfig config)
+{
+  // Indirect lighting
+  Radiance indirect = calculateIndirectRadianceCustom(cachedSurface, config);
+
+  // Possible contributions from runtime radiance
+  Radiance runtimeRadiance = calculateRuntimeRadianceCustom(cachedSurface, config, cachedSurface.worldSpacePosition);
+
+  // Accumulate all radiance sources
+  Radiance radiance = accumulateCustom(indirect, runtimeRadiance);
+
+  // add emissive
+  radiance = accumulateCustom(radiance, config.emissive);
+
+  // finalize: (processes tonemap, other forward-post, and debug visualization modes, etc)
+  finalizeLitFragmentCustom(radiance.value);
+
+  return radiance.value;
+}
+
+// ----------------------------------------------------------------------------
+hfloat Pow5Custom(hfloat x)
+{
+    return x*x * x*x * x;
+}
+
+#include "meta/renderer_module@shaders/programs/lighting/lightingPublicApiTypes.glsl"
+
+END_SHARED

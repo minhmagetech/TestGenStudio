@@ -1,0 +1,128 @@
+{
+    "class": "horizon::AssetMetadata",
+    "version": 1,
+    "data": {
+        "id": "7511585562313174512",
+        "pipelineVersion": 1,
+        "assetBuilderSettings": [
+            {
+                "class": "horizon::DccTemplateAssetBuilderSettings",
+                "version": 10008,
+                "data": {
+                    "target": "template",
+                    "sceneCollisionLayer": "Layer2",
+                    "collisionShape": "TriangleMesh",
+                    "retainAllTransforms": false,
+                    "usePackageNameInIds": false,
+                    "templateRootName": "HemiSphere_A01",
+                    "retainAllTransformsFixVersion": 2,
+                    "hiddenSceneItemsFixVersion": 1,
+                    "stableRootUuidFixVersion": 2,
+                    "disableRootNodeStringFixVersion": 1
+                }
+            },
+            {
+                "class": "horizon::dcc_asset_processing::DccSceneAssetBuilderSettings",
+                "version": 10013,
+                "data": {
+                    "target": "",
+                    "sourceCoordinateSystem": "RightUpBackward",
+                    "orientationCoordinateSystem": "YUp-RightHanded",
+                    "useNamedBasedLODs": false,
+                    "upsideDownV": false,
+                    "useGlobalScale": true,
+                    "globalScale": 1.0,
+                    "enableAssetReferencing": true,
+                    "importAssetReferencingVersion": 1,
+                    "enableLegacyMaterialConversion": false,
+                    "materialConversionVersion": 1,
+                    "enableFbxUnitConversionAlways": true,
+                    "importErrorHandlingBehavior": 1,
+                    "materialAssignmentHandlingVersion": 1,
+                    "sceneBakingMethod": "UnbakedScene",
+                    "disableAlwaysCreateDefaultMaterial": true,
+                    "importWindingOrderHandlingVersion": 1
+                }
+            },
+            {
+                "class": "horizon::renderer::tool::MeshAssetBuilderSettings",
+                "version": 10003,
+                "data": {
+                    "target": "mesh",
+                    "lightmapTextureTarget": "",
+                    "materialMapTarget": "meta/vfx_popcornfx_module@materialMap.json",
+                    "streamable": true,
+                    "streamCount": 2,
+                    "instanceGroupID": 0,
+                    "flipBitangent": false,
+                    "meshSettingsList": [
+                        {
+                            "class": "horizon::renderer::tool::MeshAssetBuilderMeshSettings",
+                            "version": 10003,
+                            "data": {
+                                "nodePath": "/RootNode/Hemisphere_A",
+                                "lightmapTextureTarget": "",
+                                "shouldParameterizeLightMapTexture": false,
+                                "cullFinalLod": false,
+                                "lodSelectionMetric": "Screen Space Ratio",
+                                "lodSettings": [
+                                    {
+                                        "class": "horizon::renderer::tool::LodSettings",
+                                        "data": {
+                                            "distanceRatio": 0.20000000298023225,
+                                            "reductionFactor": 1.0,
+                                            "targetError": 0.0,
+                                            "simplifyProfile": "Optimized",
+                                            "simplifyParams": {
+                                                "class": "horizon::renderer::tool::SimplifyParams",
+                                                "data": {
+                                                    "allowCollapseAcrossSharpEdges": false,
+                                                    "allowCollapseSmallBoundaries": false,
+                                                    "allowRemoveSmallGeometry": false,
+                                                    "smallGeometryRemovalThresholdRatio": 0.0,
+                                                    "smallGeometryMinFaceCount": 0,
+                                                    "scaleCostByTriangleArea": false,
+                                                    "weldEdges": false,
+                                                    "repairMesh": false
+                                                }
+                                            }
+                                        }
+                                    }
+                                ],
+                                "vertexStrippingConfig": {
+                                    "class": "horizon::renderer::tool::VertexStrippingConfig",
+                                    "data": {
+                                        "normals": "Automatic",
+                                        "texcoord0": "Automatic",
+                                        "texcoord1": "Automatic",
+                                        "texcoord2": "Automatic",
+                                        "texcoord3": "Automatic",
+                                        "vertexColor0": "Automatic",
+                                        "vertexColor1": "Automatic"
+                                    }
+                                },
+                                "materials": [
+                                    {
+                                        "packageOrRemoteId": "0",
+                                        "ingestionId": "7511585562313174512",
+                                        "targetId": "1081756734"
+                                    }
+                                ],
+                                "originalMaterials": [
+                                    {
+                                        "class": "horizon::AssetId",
+                                        "data": {
+                                            "packageOrRemoteId": "0",
+                                            "ingestionId": "7511585562313174512",
+                                            "targetId": "1081756734"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

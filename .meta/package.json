@@ -1,0 +1,31 @@
+{
+    "id": "26782873481315084",
+    "author": "huuminhmagetechsteam",
+    "name": "TestGenStudio",
+    "dependencies": [
+        {
+            "name": "meta/assistant",
+            "version": "development"
+        },
+        {
+            "name": "meta/assistant_experimental",
+            "version": "development"
+        },
+        {
+            "name": "meta/assistant_provisional",
+            "version": "development"
+        },
+        {
+            "name": "meta/editor_starter_kit",
+            "version": "1.14.5"
+        },
+        {
+            "name": "meta/shaders_bb",
+            "version": "0.0.14"
+        },
+        {
+            "name": "meta/worlds_sdk",
+            "version": "development"
+        }
+    ]
+}

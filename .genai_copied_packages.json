@@ -1,0 +1,232 @@
+{
+  "packages": {
+    "meta/Cheer/0.0.1": {
+      "author": "meta",
+      "folderName": "Cheer",
+      "name": "Cheer",
+      "version": "0.0.1"
+    },
+    "meta/Idle_F_Sit_Base/0.0.7": {
+      "author": "meta",
+      "folderName": "Idle_F_Sit_Base",
+      "name": "Idle_F_Sit_Base",
+      "version": "0.0.7"
+    },
+    "meta/Idle_M_Sit_Base/0.0.4": {
+      "author": "meta",
+      "folderName": "Idle_M_Sit_Base",
+      "name": "Idle_M_Sit_Base",
+      "version": "0.0.4"
+    },
+    "meta/Idle_Neutral_Crouch/0.0.1": {
+      "author": "meta",
+      "folderName": "Idle_Neutral_Crouch",
+      "name": "Idle_Neutral_Crouch",
+      "version": "0.0.1"
+    },
+    "meta/Idle_Neutral_Stand_Center_Anim/0.0.2": {
+      "author": "meta",
+      "folderName": "Idle_Neutral_Stand_Center_Anim",
+      "name": "Idle_Neutral_Stand_Center_Anim",
+      "version": "0.0.2"
+    },
+    "meta/Laugh/0.0.1": {
+      "author": "meta",
+      "folderName": "Laugh4",
+      "name": "Laugh",
+      "version": "0.0.1"
+    },
+    "meta/Loco_F_Run_Base_F/0.0.2": {
+      "author": "meta",
+      "folderName": "Loco_F_Run_Base_F",
+      "name": "Loco_F_Run_Base_F",
+      "version": "0.0.2"
+    },
+    "meta/Loco_Jump_Loop/0.0.2": {
+      "author": "meta",
+      "folderName": "Loco_Jump_Loop",
+      "name": "Loco_Jump_Loop",
+      "version": "0.0.2"
+    },
+    "meta/Loco_Jump_Super/0.0.2": {
+      "author": "meta",
+      "folderName": "Loco_Jump_Super1",
+      "name": "Loco_Jump_Super",
+      "version": "0.0.2"
+    },
+    "meta/Loco_Land_Anticipation/0.0.2": {
+      "author": "meta",
+      "folderName": "Loco_Land_Anticipation1",
+      "name": "Loco_Land_Anticipation",
+      "version": "0.0.2"
+    },
+    "meta/Loco_Land_Heavy/0.0.2": {
+      "author": "meta",
+      "folderName": "Loco_Land_Heavy",
+      "name": "Loco_Land_Heavy",
+      "version": "0.0.2"
+    },
+    "meta/Loco_M_Run_Base_F/0.0.1": {
+      "author": "meta",
+      "folderName": "Loco_M_Run_Base_F1",
+      "name": "Loco_M_Run_Base_F",
+      "version": "0.0.1"
+    },
+    "meta/Loco_Walk_Base_B/0.0.1": {
+      "author": "meta",
+      "folderName": "Loco_Walk_Base_B",
+      "name": "Loco_Walk_Base_B",
+      "version": "0.0.1"
+    },
+    "meta/Loco_Walk_Base_F/0.0.1": {
+      "author": "meta",
+      "folderName": "Loco_Walk_Base_F",
+      "name": "Loco_Walk_Base_F",
+      "version": "0.0.1"
+    },
+    "meta/Loco_Walk_Base_L/0.0.1": {
+      "author": "meta",
+      "folderName": "Loco_Walk_Base_L1",
+      "name": "Loco_Walk_Base_L",
+      "version": "0.0.1"
+    },
+    "meta/Loco_Walk_Base_R/0.0.1": {
+      "author": "meta",
+      "folderName": "Loco_Walk_Base_R1",
+      "name": "Loco_Walk_Base_R",
+      "version": "0.0.1"
+    },
+    "meta/Sprint_Forward/0.0.1": {
+      "author": "meta",
+      "folderName": "Sprint_Forward",
+      "name": "Sprint_Forward",
+      "version": "0.0.1"
+    },
+    "meta/Walk_Base_B/0.0.1": {
+      "author": "meta",
+      "folderName": "Walk_Base_B",
+      "name": "Walk_Base_B",
+      "version": "0.0.1"
+    },
+    "meta/Walk_Base_RF/0.0.1": {
+      "author": "meta",
+      "folderName": "Walk_Base_RF",
+      "name": "Walk_Base_RF",
+      "version": "0.0.1"
+    },
+    "meta/Walk_Forward/0.0.1": {
+      "author": "meta",
+      "folderName": "Walk_Forward",
+      "name": "Walk_Forward",
+      "version": "0.0.1"
+    },
+    "meta/Zombie_Idle/0.0.1": {
+      "author": "meta",
+      "folderName": "Zombie_Idle",
+      "name": "Zombie_Idle",
+      "version": "0.0.1"
+    },
+    "meta/Zombie_Run/0.0.1": {
+      "author": "meta",
+      "folderName": "Zombie_Run",
+      "name": "Zombie_Run",
+      "version": "0.0.1"
+    },
+    "meta/Zombie_Walk/0.0.1": {
+      "author": "meta",
+      "folderName": "Zombie_Walk",
+      "name": "Zombie_Walk",
+      "version": "0.0.1"
+    },
+    "meta/dark_magic_orb/0.0.2": {
+      "author": "meta",
+      "folderName": "popcornfx/dark_magic_orb",
+      "name": "dark_magic_orb",
+      "version": "0.0.2"
+    },
+    "meta/goblin_battle_axe/0.0.1": {
+      "author": "meta",
+      "folderName": "goblin_battle_axe",
+      "name": "goblin_battle_axe",
+      "version": "0.0.1"
+    },
+    "meta/loco_neutral_crouch_walk_fwd/0.0.1": {
+      "author": "meta",
+      "folderName": "loco_neutral_crouch_walk_fwd",
+      "name": "loco_neutral_crouch_walk_fwd",
+      "version": "0.0.1"
+    },
+    "meta/loco_neutral_jog_bkwd/0.0.1": {
+      "author": "meta",
+      "folderName": "loco_neutral_jog_bkwd",
+      "name": "loco_neutral_jog_bkwd",
+      "version": "0.0.1"
+    },
+    "meta/loco_neutral_jog_left/0.0.1": {
+      "author": "meta",
+      "folderName": "loco_neutral_jog_left",
+      "name": "loco_neutral_jog_left",
+      "version": "0.0.1"
+    },
+    "meta/loco_neutral_jog_left_fwd/0.0.1": {
+      "author": "meta",
+      "folderName": "loco_neutral_jog_left_fwd",
+      "name": "loco_neutral_jog_left_fwd",
+      "version": "0.0.1"
+    },
+    "meta/loco_neutral_jog_right/0.0.1": {
+      "author": "meta",
+      "folderName": "loco_neutral_jog_right1",
+      "name": "loco_neutral_jog_right",
+      "version": "0.0.1"
+    },
+    "meta/plasma_thruster/0.0.2": {
+      "author": "meta",
+      "folderName": "popcornfx/plasma_thruster",
+      "name": "plasma_thruster",
+      "version": "0.0.2"
+    },
+    "meta/poison_aura_mist_loop/0.0.2": {
+      "author": "meta",
+      "folderName": "popcornfx/poison_aura_mist_loop",
+      "name": "poison_aura_mist_loop",
+      "version": "0.0.2"
+    },
+    "meta/rocket_exhaust_trail/0.0.2": {
+      "author": "meta",
+      "folderName": "popcornfx/rocket_exhaust_trail",
+      "name": "rocket_exhaust_trail",
+      "version": "0.0.2"
+    },
+    "meta/speed_lines/0.0.2": {
+      "author": "meta",
+      "folderName": "popcornfx/speed_lines",
+      "name": "speed_lines",
+      "version": "0.0.2"
+    },
+    "meta/squirrel_dash_dust/0.0.2": {
+      "author": "meta",
+      "folderName": "popcornfx/squirrel_dash_dust",
+      "name": "squirrel_dash_dust",
+      "version": "0.0.2"
+    },
+    "meta/trail_motionblur/0.0.2": {
+      "author": "meta",
+      "folderName": "popcornfx/trail_motionblur",
+      "name": "trail_motionblur",
+      "version": "0.0.2"
+    },
+    "saileesteam/forest_tree/0.0.1": {
+      "author": "saileesteam",
+      "folderName": "forest_tree",
+      "name": "forest_tree",
+      "version": "0.0.1"
+    },
+    "unit2games/pistol_impact/0.0.3": {
+      "author": "unit2games",
+      "folderName": "popcornfx/pistol_impact",
+      "name": "pistol_impact",
+      "version": "0.0.3"
+    }
+  }
+}

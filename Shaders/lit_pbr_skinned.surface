@@ -1,0 +1,96 @@
+BEGIN_SUBSHADERS
+"Shaders/lightingCommon.surface"
+"Shaders/point_lights.surface"
+"Shaders/colorLUT.surface"
+END_SUBSHADERS
+
+BEGIN_TAGS
+PBR
+END_TAGS
+
+BEGIN_OPTIONS
+  Template "litSkinned"
+END_OPTIONS
+
+BEGIN_PROPERTIES
+
+  uvScaleOffset("UV Scale (xy) Offset (zw)", Vector4) = (1,1,0,0)
+  baseColorAndRoughnessTex("Color and Roughness (A)", 2D) = "white"
+  [Slider]
+  roughnessMultiplier("Roughness Multiplier", Range(0, 1)) = 1
+  colorTint("Tint", Color) = (1,1,1,1)
+  metalnessEmissiveOcclusionTex("Metal (R) Emissive (G) Occlusion (B)", 2D) = "blue"
+  [Slider]
+  metallicMultiplier("Metallic Multiplier", Range(0, 1)) = 1
+  [Slider]
+  occlusionMultiplier("Occlusion Multiplier", Range(0, 1)) = 1
+  emissiveIntensity("Emissive Override Intensity", Float) = 1.0
+  emissiveTint("Emissive Override Tint", Color) = (1,1,1,1)
+
+  normalTex("Normal", 2D) = "normal"
+  normalMultiplier("Normal Multiplier", Range(0, 2)) = 1
+
+  [Group("Lighting Overrides")]
+  [Slider(0.0, 5.0, 0.05)]
+  [Hide]
+  directLightingMultiplier("Direct Lighting Multiplier", Float) = 1.0
+
+  [Group("Lighting Overrides")]
+  [Slider(0.0, 5.0, 0.05)]
+  [Hide]
+  indirectLightingMultiplier("Indirect Lighting Multiplier", Float) = 1.0
+END_PROPERTIES
+
+BEGIN_DEFINES
+  #define CUSTOM_LIGHTING
+END_DEFINES
+
+BEGIN_DESCRIPTION
+Like lit_pbr but uses a CR + MEO format instead of ORM + C/A + E. Additionally, can be animated. Includes additional emissive override intensity and tint controls.
+END_DESCRIPTION
+
+BEGIN_VERTEX
+void vertexFunction(inout Vertex v, VertexData d) {
+  v.texcoord0 = v.texcoord0 * matParams.uvScaleOffset.xy + matParams.uvScaleOffset.zw;
+}
+END_VERTEX
+
+BEGIN_SURFACE
+
+#define SampleTexture(tex, s, d) texture(sampler2D(tex, s), d.texcoord0)
+#define SampleNormalTexture(tex, s, d, str) unpackNormalRG(texture(sampler2D(tex, s), d.texcoord0), str)
+
+// ----------------------------------------------------------------------------
+void surfaceFunction(inout Surface s, SurfaceData d) {
+  vec4 bcr = texture(sampler2D(baseColorAndRoughnessTex, linearWrapSampler), d.texcoord0);
+  vec3 meo = texture(sampler2D(metalnessEmissiveOcclusionTex, linearWrapSampler), d.texcoord0).rgb;
+  s.baseColor = bcr.rgb * d.vertexColor0.rgb * matParams.colorTint.rgb;
+  s.roughness = bcr.a * matParams.roughnessMultiplier;
+  s.metallic = meo.r * matParams.metallicMultiplier;
+  vec3 pointLightTint = GetPointLightsContribution(d, s.roughness, s.metallic, s.baseColor);
+  s.emissive = bcr.rgb * meo.g * (matParams.emissiveIntensity * 1000.0) * matParams.emissiveTint.rgb + pointLightTint;
+  s.occlusion = meo.b * matParams.occlusionMultiplier;
+  s.alpha = d.vertexColor0.a;
+  s.tangentSpaceNormal = unpackNormalRG(texture(sampler2D(normalTex, linearWrapSampler), d.texcoord0), matParams.normalMultiplier);
+}
+
+END_SURFACE
+
+BEGIN_FINALFORWARD
+// Override lighting here
+void finalForwardFunction(inout vec4 finalColor, Surface s, SurfaceData sd) {
+  // Setup light config
+  BBLightConfig config;
+  config.emissive.value = s.emissive;
+  config.iblDiffuse.value = s.lightmap; // Indirect diffuse is fed through lightmap value atm
+  config.indirectMultiplier = matParams.indirectLightingMultiplier;
+  config.directMultiplier = matParams.directLightingMultiplier;
+  config.radianceMultiplier = calculatePrimaryShadowFactor();
+
+  // Pass to lighting model to light the fragment
+  finalColor = vec4(CalculateFinalRadianceCustom(cacheSurfaceValuesCustom(s, sd), config), s.alpha);
+
+  // Apply Color LUT grading
+  finalColor.rgb = applyColorLUT(finalColor.rgb);
+}
+END_FINALFORWARD

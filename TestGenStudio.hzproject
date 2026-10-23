@@ -1,0 +1,53 @@
+{
+    "id": "6e33d4e6-9338-4082-a790-66ff5456678a",
+    "defaultTemplateAssetId": {
+        "packageOrRemoteId": "26782873481315084",
+        "ingestionId": "9283196365134439043",
+        "targetId": "2719744159"
+    },
+    "organizationId": "771759592689109",
+    "organizationName": "huuminhmagetech's team",
+    "organizationScope": "huuminhmagetechsteam",
+    "collisionLayers": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "playerSettings": {
+        "avatarMax": 1,
+        "screenOrientation": "Portrait"
+    },
+    "editorVersion": "187.0.0.34.652",
+    "starterWorldType": "BP_BLANK_2D_GAME",
+    "remixSource": "meta/Base_AI_Template#0.0.59",
+    "sourceWorldId": "26006345709052063"
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "profile": "v2",
+  "bootstrap_version": "semgraph-v2-docs-1",
+  "project_identity": {
+    "package_name": "Base_AI_Template",
+    "package_id": "26782873481315084",
+    "hzproject_name": "Base_AI_Template.hzproject",
+    "hzproject_id": "0b5259ef-78a9-404e-83cf-5e0b8dd90ed8",
+    "source_world_id": "26006345709052063"
+  },
+  "expected_active_docs_sha256": {
+    "ART_DIRECTION.md": "92e49cff85235aa4091d8d80a5c7e96fe1d2028bbbf9d0d54c394a5b1b70219a",
+    "PROJECT_SUMMARY.md": "55af052b061db5a8ba20043d53b247f9b83949277a247c1b80d7c6c5cc8bb9b8",
+    "TASK_BOARD.yaml": "137e5dd7bf996e00dff4a0f9e4e27b7423c1c8990d1b5645b91ba6c73e74cc87",
+    "TASK_BOARD.yaml.assetmeta": "0748fc1177bc2361689916016e337425b7d1f978d0394ac809aa9c2f46384843"
+  },
+  "output_docs_sha256": {
+    "ART_DIRECTION.md": "670ca196bf3ffeee4eef48ef146be1663fee108423af94ad1e986629669823d4",
+    "PROJECT_SUMMARY.md": "202d1ab7f115ca2167c060df114b7599abae0e2f2f86d8cccd21eb3f63f31f2d",
+    "TASK_BOARD.yaml": "137e5dd7bf996e00dff4a0f9e4e27b7423c1c8990d1b5645b91ba6c73e74cc87",
+    "TASK_BOARD.yaml.assetmeta": "0748fc1177bc2361689916016e337425b7d1f978d0394ac809aa9c2f46384843",
+    "mechanics/player-movement.md": "ff7ff4423e9e819c8b6061d4cb326080a3c94e4c1546acded3cf2ab2d7af1542",
+    "overview.md": "2a8b584dce25bbfe6f0a0f991f1ec7dc7e4ece148a5dd5386905f0ebbaf7194d"
+  }
+}

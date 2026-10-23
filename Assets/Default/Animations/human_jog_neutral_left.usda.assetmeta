@@ -1,0 +1,206 @@
+{
+    "class": "horizon::AssetMetadata",
+    "version": 1,
+    "data": {
+        "id": "8366254976969583149",
+        "pipelineVersion": 1,
+        "assetBuilderSettings": [
+            {
+                "class": "horizon::DccTemplateAssetBuilderSettings",
+                "version": 10009,
+                "data": {
+                    "target": "template",
+                    "sceneCollisionLayer": "Layer2",
+                    "collisionShape": "TriangleMesh",
+                    "retainAllTransforms": false,
+                    "usePackageNameInIds": false,
+                    "templateRootName": "human_jog_neutral_left",
+                    "retainAllTransformsFixVersion": 2,
+                    "hiddenSceneItemsFixVersion": 1,
+                    "stableRootUuidFixVersion": 1,
+                    "disableRootNodeStringFixVersion": 1
+                }
+            },
+            {
+                "class": "horizon::dcc_asset_processing::DccSceneAssetBuilderSettings",
+                "version": 10015,
+                "data": {
+                    "target": "",
+                    "sourceCoordinateSystem": "RightUpBackward",
+                    "orientationCoordinateSystem": "YUp-RightHanded",
+                    "useNamedBasedLODs": false,
+                    "upsideDownV": false,
+                    "useGlobalScale": true,
+                    "globalScale": 1.0,
+                    "enableAssetReferencing": true,
+                    "importAssetReferencingVersion": 1,
+                    "enableLegacyMaterialConversion": false,
+                    "materialConversionVersion": 1,
+                    "enableFbxUnitConversionAlways": true,
+                    "importErrorHandlingBehavior": 1,
+                    "materialAssignmentHandlingVersion": 1,
+                    "sceneBakingMethod": "UnbakedScene",
+                    "meshPivotMode": "None",
+                    "disableAlwaysCreateDefaultMaterial": true,
+                    "importWindingOrderHandlingVersion": 1,
+                    "uvTransformHandlingVersion": 0
+                }
+            },
+            {
+                "class": "horizon::animation_hzanim::SceneToHzAnimAssetBuilderSettings",
+                "version": 10007,
+                "data": {
+                    "target": "hzanim_anim",
+                    "animationSettingsList": [
+                        {
+                            "class": "horizon::animation_hzanim::SceneToHzAnimAssetBuilderAnimationSettings",
+                            "version": 10006,
+                            "data": {
+                                "animationName": "Animation",
+                                "exportedJoints": [],
+                                "isAdditive": false,
+                                "eventTracks": [],
+                                "intentionalityPreset": "Default",
+                                "extractRootMotionMode": "None",
+                                "extractWorldAnchors": false,
+                                "enableFootContactDetection": false,
+                                "leftFootJointName": "",
+                                "rightFootJointName": ""
+                            }
+                        }
+                    ],
+                    "skeletonSource": "UserDefined",
+                    "skeletonAsset": {
+                        "packageOrRemoteId": "0",
+                        "ingestionId": "8366254976969583149",
+                        "targetId": "3998529611"
+                    },
+                    "originalSkeletonAsset": {
+                        "class": "horizon::AssetId",
+                        "data": {
+                            "packageOrRemoteId": "0",
+                            "ingestionId": "8366254976969583149",
+                            "targetId": "3998529611"
+                        }
+                    }
+                }
+            },
+            {
+                "class": "horizon::animation_hzanim::SceneToHzAnimSkeletonAssetBuilderSettings",
+                "version": 10002,
+                "data": {
+                    "target": "hzanim_skel",
+                    "skeletonSettingsList": [
+                        {
+                            "class": "horizon::animation_hzanim::SkeletonAssetBuilderSkeletonSettings",
+                            "data": {
+                                "skeletonName": "Skeleton",
+                                "exportedJoints": [
+                                    "root_joint",
+                                    "pelvis_joint",
+                                    "hip_left_joint",
+                                    "knee_left_joint",
+                                    "footAnkle_left_joint",
+                                    "footBall_left_joint",
+                                    "footToe_left_joint",
+                                    "hip_right_joint",
+                                    "knee_right_joint",
+                                    "footAnkle_right_joint",
+                                    "footBall_right_joint",
+                                    "footToe_right_joint",
+                                    "spineLower_joint",
+                                    "spineMiddle_joint",
+                                    "spineUpper_joint",
+                                    "chest_joint",
+                                    "clavicle_left_joint",
+                                    "shoulder_left_joint",
+                                    "elbow_left_joint",
+                                    "handWrist_left_joint",
+                                    "handGrip_left_joint",
+                                    "handIndexMeta_left_joint",
+                                    "handIndex_00_left_joint",
+                                    "handIndex_01_left_joint",
+                                    "handIndex_02_left_joint",
+                                    "handMiddleMeta_left_joint",
+                                    "handMiddle_00_left_joint",
+                                    "handMiddle_01_left_joint",
+                                    "handMiddle_02_left_joint",
+                                    "handPinkyMeta_left_joint",
+                                    "handPinky_00_left_joint",
+                                    "handPinky_01_left_joint",
+                                    "handPinky_02_left_joint",
+                                    "handRingMeta_left_joint",
+                                    "handRing_00_left_joint",
+                                    "handRing_01_left_joint",
+                                    "handRing_02_left_joint",
+                                    "handThumbMeta_left_joint",
+                                    "handThumb_00_left_joint",
+                                    "handThumb_01_left_joint",
+                                    "handThumb_02_left_joint",
+                                    "clavicle_right_joint",
+                                    "shoulder_right_joint",
+                                    "elbow_right_joint",
+                                    "handWrist_right_joint",
+                                    "handGrip_right_joint",
+                                    "handIndexMeta_right_joint",
+                                    "handIndex_00_right_joint",
+                                    "handIndex_01_right_joint",
+                                    "handIndex_02_right_joint",
+                                    "handMiddleMeta_right_joint",
+                                    "handMiddle_00_right_joint",
+                                    "handMiddle_01_right_joint",
+                                    "handMiddle_02_right_joint",
+                                    "handPinkyMeta_right_joint",
+                                    "handPinky_00_right_joint",
+                                    "handPinky_01_right_joint",
+                                    "handPinky_02_right_joint",
+                                    "handRingMeta_right_joint",
+                                    "handRing_00_right_joint",
+                                    "handRing_01_right_joint",
+                                    "handRing_02_right_joint",
+                                    "handThumbMeta_right_joint",
+                                    "handThumb_00_right_joint",
+                                    "handThumb_01_right_joint",
+                                    "handThumb_02_right_joint",
+                                    "neck_joint",
+                                    "head_joint",
+                                    "eye_offset_left_joint",
+                                    "eye_left_joint",
+                                    "eye_offset_right_joint",
+                                    "eye_right_joint",
+                                    "muzzle_joint",
+                                    "dentureBt_joint",
+                                    "tongueBase_joint",
+                                    "tongueTip_joint",
+                                    "dentureTp_joint",
+                                    "neck_twist_01_joint",
+                                    "neck_twist_02_joint"
+                                ],
+                                "originallyExportedHash": 3367798326,
+                                "exportedFloats": [],
+                                "originallyExportedFloatsHash": 1600968271
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "class": "horizon::physics::PhysXConvexMeshAssetBuilderSettings",
+                "version": 10001,
+                "data": {
+                    "target": "phys_convex_mesh",
+                    "maxNumConvexHulls": 1,
+                    "maxNumVertsPerConvexHull": 128,
+                    "voxelResolution": 400000,
+                    "allowedVolumeErrorPercentage": 1.0,
+                    "recursionDepth": 10,
+                    "minEdgeLength": 2
+                }
+            }
+        ],
+        "docMeta": {
+            "class": "horizon::DocMetadata",
+            "data": {}
+        }
+    }
+}

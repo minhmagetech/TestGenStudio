@@ -1,0 +1,26 @@
+{
+    "__attr__": {
+        "__version__": {
+            "version": 1
+        }
+    },
+    "name": "bb_default_skinned",
+    "attributes": [
+        {
+            "name": "baseColorAndRoughnessTex",
+            "value": {
+                "type": "assetId",
+                "assetIdValue": {
+                    "packageOrRemoteId": "26782873481315084",
+                    "ingestionId": "4494789261054954399",
+                    "targetId": "1800881692"
+                }
+            }
+        }
+    ],
+    "shaderAssetId": {
+        "packageOrRemoteId": "7245573779283516004",
+        "ingestionId": "10800945673246108250",
+        "targetId": "2708897769"
+    }
+}

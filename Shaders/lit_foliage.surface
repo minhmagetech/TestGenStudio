@@ -1,0 +1,155 @@
+BEGIN_SUBSHADERS
+"Shaders/lightingCommon.surface"
+"Shaders/point_lights.surface"
+"Shaders/shaderkit.surface"
+"Shaders/colorLUT.surface"
+END_SUBSHADERS
+
+BEGIN_TAGS
+PBR
+Masked
+END_TAGS
+
+BEGIN_OPTIONS
+  renderGroup masked
+  multiSampleStates alphaToCoverageMultiSampleState
+END_OPTIONS
+
+BEGIN_PROPERTIES
+  [Group("Texcoord0", -9)]
+  scaleOffsetUV0("Scale/Offset", Vector4) = (1, 1, 0, 0)
+
+  [Help("Color texture, with optional alpha or a height map in the A channel")]
+  [Group("Layer 0")]layer0ColorAndAlpha("Color/Alpha", 2D) = "white"
+  [Group("Layer 0")]layer0ColorTint("Tint", Color) = (1,1,1,1)
+
+  [Help("Material properties texture, with Occlusion in the R channel, Roughness in G, and Metallic in B")]
+  [Group("Layer 0")]layer0ORM("Occlusion/Roughness/Metallic", 2D) = "yellow"
+
+  [Slider]
+  [Group("Layer 0")]
+  layer0MetallicMultiplier("Metallic Multiplier", Range(0, 1)) = 1
+  [Slider]
+  [Group("Layer 0")]
+  layer0OcclusionMultiplier("Occlusion Multiplier", Range(0, 1)) = 1
+  [Slider]
+  [Group("Layer 0")]
+  layer0RoughnessMultiplier("Roughness Multiplier", Range(0, 1)) = 1
+
+  [Group("Layer 0")]layer0Normal("Normal", 2D) = "normal"
+  [Group("Layer 0")]
+  layer0NormalMultiplier("Normal Multiplier", Range(0, 2)) = 1
+
+  [Group("Layer 0")]layer0Emissive("Emissive", 2D) = "black"
+
+  [Slider(0.0, 1.0, 1)]
+  [Group("Foliage")]
+  enableDoubleSidedLighting("Enable Double Sided Lighting", Range(0, 1)) = 0
+
+  [Slider(0.0, 1.0, 0.01)]
+  [Group("Foliage")]
+  [Help("The thickness of the foliage, higher values will block more light, while lower values will let more light bleed through")]
+  doubleSidedLightingMultiplier("Thickness", Range(0, 1)) = 0.4
+
+  [Group("Masking")]
+  alphaCut("Alpha Cut Threshold", Range(0, 1)) = 0.27
+
+  [Group("Lighting Overrides")]
+  [Slider(0.0, 5.0, 0.05)]
+  [Hide]
+  directLightingMultiplier("Direct Lighting Multiplier", Float) = 1.0
+
+  [Group("Lighting Overrides")]
+  [Slider(0.0, 5.0, 0.05)]
+  [Hide]
+  indirectLightingMultiplier("Indirect Lighting Multiplier", Float) = 1.0
+END_PROPERTIES
+
+BEGIN_DEFINES
+  // clear these defines comming from shaderkit.surface
+  #undef DEFAULT_SAMPLER_COLOR
+  #undef DEFAULT_SAMPLER_PBR
+  #undef DEFAULT_SAMPLER_NORMAL
+  // set our own
+  #define DEFAULT_SAMPLER_COLOR linearWrapSampler
+  #define DEFAULT_SAMPLER_PBR linearWrapSampler
+  #define DEFAULT_SAMPLER_NORMAL linearWrapSampler
+
+  #define CUSTOM_LIGHTING
+END_DEFINES
+
+BEGIN_BLACKBOARD
+  LayerSurface layer0Surface;
+END_BLACKBOARD
+
+BEGIN_VERTEX
+
+void vertexFunction(inout Vertex v, inout VertexData d) {
+  v.texcoord0 = v.texcoord0 * matParams.scaleOffsetUV0.xy + matParams.scaleOffsetUV0.zw;
+}
+
+END_VERTEX
+
+BEGIN_SURFACE
+
+#define SKSample0Texture(tex, s, d) texture(sampler2D(tex, s), d.texcoord0)
+#define SKSampleNormal0Texture(tex, s, d, str) unpackNormalRG(texture(sampler2D(tex, s), d.texcoord0), str)
+
+float sharpenAlpha(float alpha) {
+  const float cutoff = matParams.alphaCut;
+  return (alpha - cutoff) / max(fwidth(alpha), 0.1) + 0.5;
+}
+
+void surfaceFunction(inout Surface s, SurfaceData d) {
+  // Initialize layer surface
+  d.blackboard.layer0Surface = initLayerSurface();
+  d.blackboard.layer0Surface.weight = 1.0;
+
+  // Sample color texture
+  vec4 alb = SKSample0Texture(layer0ColorAndAlpha, DEFAULT_SAMPLER_COLOR, d) * matParams.layer0ColorTint;
+  d.blackboard.layer0Surface.baseColor = alb.rgb;
+  d.blackboard.layer0Surface.alpha = alb.a;
+
+  // Set normal values
+  vec3 norm = SKSampleNormal0Texture(layer0Normal, DEFAULT_SAMPLER_NORMAL, d, 1.0);
+  d.blackboard.layer0Surface.tangentSpaceNormal = norm * matParams.layer0NormalMultiplier;
+
+  // Set PBR values - engine will use these for base lighting
+  vec4 orm = SKSample0Texture(layer0ORM, DEFAULT_SAMPLER_PBR, d);
+  d.blackboard.layer0Surface.metallic = orm.b * matParams.layer0MetallicMultiplier;
+  d.blackboard.layer0Surface.occlusion = orm.r * matParams.layer0OcclusionMultiplier;
+  d.blackboard.layer0Surface.roughness = orm.g * matParams.layer0RoughnessMultiplier;
+
+  // Set emissive texture
+  vec4 emissive = SKSample0Texture(layer0Emissive, DEFAULT_SAMPLER_COLOR, d);
+  d.blackboard.layer0Surface.emissive = GetPointLightsContribution(d, d.blackboard.layer0Surface.roughness, d.blackboard.layer0Surface.metallic, d.blackboard.layer0Surface.baseColor, matParams.enableDoubleSidedLighting) + emissive.rgb;
+
+  // Assign layer surface to output
+  assignSurface(s, d.blackboard.layer0Surface);
+
+  // Apply alpha masking
+  s.alpha = sharpenAlpha(s.alpha);
+}
+
+END_SURFACE
+
+BEGIN_FINALFORWARD
+// Override lighting here
+void finalForwardFunction(inout vec4 finalColor, Surface s, SurfaceData sd) {
+  // Setup light config
+  BBLightConfig config;
+  config.emissive.value = s.emissive;
+  config.iblDiffuse.value = s.lightmap; // Indirect diffuse is fed through lightmap value atm
+  config.indirectMultiplier = matParams.indirectLightingMultiplier;
+  config.directMultiplier = matParams.directLightingMultiplier;
+  config.enableDoubleSidedLighting = matParams.enableDoubleSidedLighting;
+  config.doubleSidedLightingMultiplier = (1.0 - matParams.doubleSidedLightingMultiplier);
+  config.radianceMultiplier = calculatePrimaryShadowFactor();
+
+  // Pass to lighting model to light the fragment
+  finalColor = vec4(CalculateFinalRadianceCustom(cacheSurfaceValuesCustom(s, sd), config), s.alpha);
+
+  // Apply Color LUT grading
+  finalColor.rgb = applyColorLUT(finalColor.rgb);
+}
+END_FINALFORWARD
